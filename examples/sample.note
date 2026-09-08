@@ -65,5 +65,3 @@ section(second section) #sec2 {
     the backticks alias to the code block and both will be syntax highlighted based on the lang
 
 }
-
-

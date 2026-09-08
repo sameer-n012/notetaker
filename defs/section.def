@@ -1,4 +1,5 @@
 numbered: true
+toc: true
 
 latex {
 \phantomsection\addcontentsline{toc}{section}{$n. $1}

@@ -1,11 +1,25 @@
+/*
+ * Manages the label definitions and template substitution for blocks.
+ *
+ * A .def file defines how a block with a given label is rendered in LaTeX and
+ * HTML, and whether it is numbered. The `_labels.json` file maps labels to
+ * their corresponding .def files. A .def file can have 4 sections:
+ * - `property: value` lines: `numbered: true|false` and `toc: true|false`
+ *   (whether this label's numbered blocks also get a table-of-contents entry)
+ * - `latex { ... }` section for the LaTeX template
+ * - `html { ... }` section for the HTML template
+ * - `style { ... }` section for the CSS style (optional)
+ * See `defs/` for examples of `.def` files and `_labels.json` for the mapping.
+ */
+
 use anyhow::{bail, Context, Result};
 use std::collections::HashMap;
 use std::path::Path;
 
-/// A rendering definition for one block label, loaded from a `.def` file.
 #[derive(Debug, Clone)]
 pub struct LabelDef {
     pub numbered: bool,
+    pub toc: bool,
     pub latex_template: String,
     pub html_template: String,
     pub style: Option<String>,
@@ -13,8 +27,23 @@ pub struct LabelDef {
 
 pub type LabelMap = HashMap<String, LabelDef>;
 
-/// Loads `labels.json` (label -> path to a `.def` file, resolved relative to
-/// the json file's own directory) and parses every referenced `.def` file.
+/*
+ * Default values for each property in a .def file. If a property is not
+ * in the mapping, it is rejected.
+ *
+ * @return A HashMap of property names to their default values.
+ */
+fn default_properties() -> HashMap<&'static str, bool> {
+    HashMap::from([("numbered", false), ("toc", false)])
+}
+
+/*
+ * Loads `_labels.json` file and parses every referenced `.def` file.
+ *
+ * @param labels_json_path The path to the `_labels.json` file.
+ *
+ * @return A LabelMap mapping labels to their definitions.
+ */
 pub fn load_all(labels_json_path: &Path) -> Result<LabelMap> {
     let text = std::fs::read_to_string(labels_json_path)
         .with_context(|| format!("reading {}", labels_json_path.display()))?;
@@ -33,13 +62,18 @@ pub fn load_all(labels_json_path: &Path) -> Result<LabelMap> {
     Ok(defs)
 }
 
-/// A `.def` file has a `numbered: true|false` line and `latex { ... }` /
-/// `html { ... }` / `style { ... }` sections, using the same "`{` at
-/// end-of-line, lone `}` closes it" rule as note files.
+/*
+ * A .def file has a `numbered: true|false` line and `latex { ... }` /
+ * `html { ... }` / `style { ... }` sections.
+ *
+ * @param source The contents of a .def file.
+ *
+ * @return A LabelDef struct with the parsed properties and templates.
+ */
 fn parse(source: &str) -> Result<LabelDef> {
     let lines: Vec<&str> = source.lines().collect();
     let mut i = 0;
-    let mut numbered = false;
+    let mut properties = default_properties();
     let mut latex_template = None;
     let mut html_template = None;
     let mut style = None;
@@ -61,54 +95,69 @@ fn parse(source: &str) -> Result<LabelDef> {
                 i += 1;
             }
             if i < lines.len() {
-                i += 1; // consume closing brace
+                i += 1;
             }
             let content = body_lines.join("\n");
             match name.as_str() {
                 "latex" => latex_template = Some(content),
                 "html" => html_template = Some(content),
                 "style" => style = Some(content),
-                other => bail!("unknown section '{other}' in def file"),
+                other => bail!("Unknown section '{other}' in def file"),
             }
             continue;
         }
 
         if let Some((key, value)) = trimmed.split_once(':') {
-            match key.trim() {
-                "numbered" => numbered = value.trim() == "true",
-                other => bail!("unknown key '{other}' in def file"),
+            let key = key.trim();
+            if properties.contains_key(key) {
+                properties.insert(key, value.trim() == "true");
+            } else {
+                bail!("Unknown key '{key}' in def file");
             }
             i += 1;
             continue;
         }
 
-        bail!("unexpected line in def file: {trimmed}");
+        bail!("Unexpected line in def file: {trimmed}");
     }
 
     Ok(LabelDef {
-        numbered,
-        latex_template: latex_template.context("def file missing a 'latex {' section")?,
-        html_template: html_template.context("def file missing an 'html {' section")?,
+        numbered: properties["numbered"],
+        toc: properties["toc"],
+        latex_template: latex_template.context("Definition file missing a 'latex {' section")?,
+        html_template: html_template.context("Definition file missing an 'html {' section")?,
         style,
     })
 }
 
-/// Substitutes `$1`, `$2`, ... with positional args (from `label(arg1, arg2)`),
-/// `$body` with the block's rendered children, `$id` with its id (if any),
-/// `$id_attr` with ` id="..."` (or nothing, if there's no id — use this for
-/// an HTML attribute so a missing id doesn't leave `id=""`), and `$n` with
-/// its number, e.g. `"2.2.1"` (if the label is numbered). `${N?text}` or
-/// `${id?text}` renders
-/// `text` (itself substituted) only if arg N (or the id) was given, otherwise
-/// nothing — use this to keep an optional title, or a `\label{}`, out of the
-/// output entirely instead of leaving a literal `$1` behind (which, e.g.,
-/// would break LaTeX by opening math mode) or an empty, duplicate `\label{}`.
-/// `extra` supplies any additional named values a caller wants to expose as
-/// `$name` (e.g. a precomputed, renderer-specific helper string) — checked
-/// after the built-ins, so it can't shadow `body`/`id`/`id_attr`/`n`. Any
-/// other `$word` is left as-is, so stray `$` signs elsewhere in a template
-/// stay literal.
-pub fn substitute(template: &str, args: &[String], body: &str, id: Option<&str>, n: Option<&str>, extra: &[(&str, &str)]) -> String {
+/*
+ * Substitutes `$1`, `$2`, ... with positional args (from `label(arg1, arg2)`),
+ * `$body` with the block's rendered children, `$id` with its id (if any),
+ * `$id_attr` with ` id="..."` (or nothing, if there's no id), and `$n` with
+ * its number, e.g. `"2.2.1"` (if the label is numbered). `${N?text}` or
+ * `${id?text}` renders `text` (itself substituted) only if arg N (or the id)
+ * was given, otherwise nothing. `extra` supplies any additional named values a
+ * caller wants to expose as `$name` (e.g. a precomputed, renderer-specific
+ * helper string). Any other `$word` is left as-is, so stray `$` signs
+ * elsewhere in a template stay literal.
+ *
+ * @param template The template string to substitute into.
+ * @param args The positional arguments to substitute for `$1`, `$2`, etc.
+ * @param body The block's rendered children to substitute for `$body`.
+ * @param id The block's id to substitute for `$id` and `$id_attr`.
+ * @param n The block's number to substitute for `$n`.
+ * @param extra Any additional named values to substitute for `$name`.
+ *
+ * @return The template string with all substitutions made.
+ */
+pub fn substitute(
+    template: &str,
+    args: &[String],
+    body: &str,
+    id: Option<&str>,
+    n: Option<&str>,
+    extra: &[(&str, &str)],
+) -> String {
     let chars: Vec<char> = template.chars().collect();
     let mut out = String::new();
     let mut i = 0;
@@ -131,7 +180,11 @@ pub fn substitute(template: &str, args: &[String], body: &str, id: Option<&str>,
                     let content_start = cond_end + 1;
                     if let Some(close) = find_matching_brace(&chars, content_start) {
                         let present = if is_digit_cond {
-                            let idx: usize = chars[cond_start..cond_end].iter().collect::<String>().parse().unwrap();
+                            let idx: usize = chars[cond_start..cond_end]
+                                .iter()
+                                .collect::<String>()
+                                .parse()
+                                .unwrap();
                             idx.checked_sub(1).and_then(|i| args.get(i)).is_some()
                         } else {
                             id.is_some()
@@ -157,7 +210,7 @@ pub fn substitute(template: &str, args: &[String], body: &str, id: Option<&str>,
                     match idx.checked_sub(1).and_then(|i| args.get(i)) {
                         Some(arg) => out.push_str(arg),
                         None => {
-                            // out of range: not a real placeholder, keep literal (e.g. "$5" as currency)
+                            // argument number out of range, leave as literal
                             out.push('$');
                             out.push_str(&digits);
                         }
@@ -209,9 +262,13 @@ pub fn substitute(template: &str, args: &[String], body: &str, id: Option<&str>,
     out
 }
 
-/// Finds the `}` that closes a `${...}` conditional group's own already-open
-/// brace, accounting for any nested `{`/`}` pairs inside its content (e.g.
-/// `${id?\label{$id}}` has a `\label{...}` nested inside).
+/*
+ * Finds the `}` that closes a `${...}` conditional group's own already-open
+ * brace, accounting for any nested `{`/`}` pairs inside its content.
+ *
+ * @param chars The characters of the template string.
+ * @param start The index of the first character after the opening `{`.
+ */
 fn find_matching_brace(chars: &[char], start: usize) -> Option<usize> {
     let mut depth = 1;
     for (i, &c) in chars.iter().enumerate().skip(start) {
@@ -238,9 +295,24 @@ mod tests {
         let src = "numbered: true\n\nlatex {\n\\begin{theorem}[$1]\n$body\n\\end{theorem}\n}\n\nhtml {\n<div>$n $1</div>\n}\n";
         let def = parse(src).unwrap();
         assert!(def.numbered);
+        assert!(!def.toc);
         assert!(def.latex_template.contains("$body"));
         assert!(def.html_template.contains("$n"));
         assert!(def.style.is_none());
+    }
+
+    #[test]
+    fn omitted_properties_use_their_defaults() {
+        let src = "latex {\n$body\n}\n\nhtml {\n$body\n}\n";
+        let def = parse(src).unwrap();
+        assert!(!def.numbered);
+        assert!(!def.toc);
+    }
+
+    #[test]
+    fn unknown_property_key_is_rejected() {
+        let src = "foo: true\n\nlatex {\n$body\n}\n\nhtml {\n$body\n}\n";
+        assert!(parse(src).is_err());
     }
 
     #[test]
@@ -258,7 +330,14 @@ mod tests {
 
     #[test]
     fn conditional_group_present_and_absent() {
-        let with_arg = substitute("Theorem${1? ($1)}.", &["Foo".to_string()], "", None, None, &[]);
+        let with_arg = substitute(
+            "Theorem${1? ($1)}.",
+            &["Foo".to_string()],
+            "",
+            None,
+            None,
+            &[],
+        );
         assert_eq!(with_arg, "Theorem (Foo).");
 
         let without_arg = substitute("Theorem${1? ($1)}.", &[], "", None, None, &[]);
@@ -267,9 +346,6 @@ mod tests {
 
     #[test]
     fn conditional_group_id_with_nested_braces() {
-        // `\label{$id}` nests its own `{`/`}` inside the conditional group,
-        // so the group's closing `}` must be found by brace-depth matching,
-        // not by scanning for the first `}`.
         let with_id = substitute("X${id?\\label{$id}}Y", &[], "", Some("cs"), None, &[]);
         assert_eq!(with_id, "X\\label{cs}Y");
 
@@ -295,7 +371,6 @@ mod tests {
         );
         assert_eq!(out, "<pre class=\"language-rust\">code here</pre>");
 
-        // an extra can't override a built-in name
         let shadow_attempt = substitute("$body", &[], "real body", None, None, &[("body", "fake")]);
         assert_eq!(shadow_attempt, "real body");
     }

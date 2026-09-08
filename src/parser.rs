@@ -1,8 +1,19 @@
+/*
+ * Manages the parsing of the note source into an AST. The parser is a simple
+ * line-by-line parser that recognizes blocks, code blocks, math blocks,
+ * and inline math, code, and references.
+ *
+ * Notes:
+ * - The parser does not perform any reflowing of paragraphs, so each non-blank
+ * line is its own paragraph.
+ * - A line ending in { opens a block. A line that only contains } closes a
+ * block. Any other { or } is treated as literal text.
+ * - label(...) {} is treated as a block with an empty body. Note that this
+ * causes no conflicts.
+ */
+
 use crate::ast::{Document, Inline, Node};
 
-/// Structural rule: a line ending in `{` (after trimming trailing whitespace)
-/// opens a block; a line whose trimmed content is exactly `}` closes one.
-/// Any other `{`/`}` (inside math, code, or prose) is just literal text.
 pub fn parse(source: &str) -> Document {
     let lines: Vec<&str> = source.lines().collect();
     let mut pos = 0;
@@ -10,6 +21,20 @@ pub fn parse(source: &str) -> Document {
     Document { nodes }
 }
 
+/*
+ * Parses a slice of lines into a vector of nodes. The `pos` parameter is a
+ * mutable reference to the current position in the lines slice. The `in_block`
+ * parameter indicates whether the parser is currently inside a block. If it is,
+ * the parser will stop parsing when it encounters a line that only contains a
+ * closing brace (}). If it is not, the parser will continue parsing until it
+ * reaches the end of the lines slice.
+ *
+ * @param lines: the slice of lines to parse
+ * @param pos: a mutable reference to the current position in the lines slice
+ * @param in_block: whether the parser is currently inside a block
+ *
+ * @return: a vector of nodes parsed from the lines slice
+ */
 fn parse_nodes(lines: &[&str], pos: &mut usize, in_block: bool) -> Vec<Node> {
     let mut nodes = Vec::new();
 
@@ -37,20 +62,26 @@ fn parse_nodes(lines: &[&str], pos: &mut usize, in_block: bool) -> Vec<Node> {
             if *pos < lines.len() {
                 *pos += 1; // consume closing fence
             }
-            nodes.push(Node::Paragraph(vec![Inline::MathDisplay(dedent(&math_lines))]));
+            nodes.push(Node::Paragraph(vec![Inline::MathDisplay(dedent(
+                &math_lines,
+            ))]));
             continue;
         }
 
         if let Some(lang) = trimmed.strip_prefix("```") {
             *pos += 1;
-            let lang = if lang.is_empty() { None } else { Some(lang.trim().to_string()) };
+            let lang = if lang.is_empty() {
+                None
+            } else {
+                Some(lang.trim().to_string())
+            };
             let mut code_lines: Vec<&str> = Vec::new();
             while *pos < lines.len() && lines[*pos].trim() != "```" {
                 code_lines.push(lines[*pos]);
                 *pos += 1;
             }
             if *pos < lines.len() {
-                *pos += 1; // consume closing fence
+                *pos += 1;
             }
             nodes.push(Node::Code {
                 lang,
@@ -59,9 +90,7 @@ fn parse_nodes(lines: &[&str], pos: &mut usize, in_block: bool) -> Vec<Node> {
             continue;
         }
 
-        // `label(...) {}` with an empty body, entirely on one line — safe to
-        // support unlike general one-line nesting, since there's no content
-        // between the braces to create the ambiguity that rule avoids.
+        // `label(...) {}` case
         if let Some(header) = line.trim_end().strip_suffix("{}") {
             let (label, args, id) = parse_header(header.trim());
             *pos += 1;
@@ -85,9 +114,8 @@ fn parse_nodes(lines: &[&str], pos: &mut usize, in_block: bool) -> Vec<Node> {
             let (label, args, id) = parse_header(header.trim());
             *pos += 1;
 
-            // `mlmath { ... }` aliases the `$$$` display-math fence, and
-            // `code(lang) { ... }` aliases the ``` fence: both take their
-            // content raw (no nested block/paragraph parsing).
+            // `mlmath { ... }` aliases `$$$` and `code(...) { ... }` aliases
+            // ```...```
             match label.as_str() {
                 "mlmath" => {
                     let mut math_lines: Vec<&str> = Vec::new();
@@ -98,7 +126,9 @@ fn parse_nodes(lines: &[&str], pos: &mut usize, in_block: bool) -> Vec<Node> {
                     if *pos < lines.len() {
                         *pos += 1;
                     }
-                    nodes.push(Node::Paragraph(vec![Inline::MathDisplay(dedent(&math_lines))]));
+                    nodes.push(Node::Paragraph(vec![Inline::MathDisplay(dedent(
+                        &math_lines,
+                    ))]));
                 }
                 "code" => {
                     let mut code_lines: Vec<&str> = Vec::new();
@@ -127,7 +157,6 @@ fn parse_nodes(lines: &[&str], pos: &mut usize, in_block: bool) -> Vec<Node> {
             continue;
         }
 
-        // every non-blank line is its own paragraph (no reflow-joining)
         nodes.push(Node::Paragraph(parse_inline(trimmed)));
         *pos += 1;
     }
@@ -135,11 +164,14 @@ fn parse_nodes(lines: &[&str], pos: &mut usize, in_block: bool) -> Vec<Node> {
     nodes
 }
 
-/// Strips the common leading whitespace shared by every non-blank line, so a
-/// fenced code/math block written indented (either matching its opening
-/// marker's indent, or one level deeper, as people naturally write it)
-/// doesn't carry that indentation into its content. Relative indentation
-/// between lines (e.g. a nested `if` in Python) is preserved.
+/*
+ * Strips the common leading whitespace on every non-blank line in a slice
+ * of lines. This is used for code and math blocks, which are often indented
+ * to match the surrounding text, but should not carry that indentation into
+ * the block content. Note that relative indentation is preserved.
+ *
+ * @param lines: the slice of lines to dedent
+ */
 fn dedent(lines: &[&str]) -> String {
     let min_indent = lines
         .iter()
@@ -162,6 +194,17 @@ fn dedent(lines: &[&str]) -> String {
 }
 
 /// Parses `label(arg1, arg2, ...) #id` (args and id both optional) into its parts.
+
+/*
+ * Parses a header string of the form `label(arg1, arg2, ...) #id` into its
+ * constituent parts: the label, an optional vector of arguments, and an
+ * optional ID.
+ *
+ * @param s: the header string to parse
+ *
+ * @return: a tuple containing the label, a vector of arguments, and an
+ * optional ID
+ */
 fn parse_header(s: &str) -> (String, Vec<String>, Option<String>) {
     let mut s = s.trim();
     let mut id = None;
@@ -190,6 +233,14 @@ fn parse_header(s: &str) -> (String, Vec<String>, Option<String>) {
     (s.to_string(), Vec::new(), id)
 }
 
+/*
+ * Parses inline elements in a string, including text, inline math, code,
+ * and references.
+ *
+ * @param text: the string to parse
+ *
+ * @return: a vector of Inline elements parsed from the string
+ */
 pub fn parse_inline(text: &str) -> Vec<Inline> {
     let chars: Vec<char> = text.chars().collect();
     let mut result = Vec::new();
@@ -219,10 +270,16 @@ pub fn parse_inline(text: &str) -> Vec<Inline> {
                 i = end + 1;
                 continue;
             }
-        } else if chars[i] == '@' && chars.get(i + 1).is_some_and(|c| c.is_alphanumeric() || *c == '_') {
+        } else if chars[i] == '@'
+            && chars
+                .get(i + 1)
+                .is_some_and(|c| c.is_alphanumeric() || *c == '_')
+        {
             let start = i + 1;
             let mut end = start;
-            while end < chars.len() && (chars[end].is_alphanumeric() || chars[end] == '_' || chars[end] == '-') {
+            while end < chars.len()
+                && (chars[end].is_alphanumeric() || chars[end] == '_' || chars[end] == '-')
+            {
                 end += 1;
             }
             if !buf.is_empty() {
@@ -243,7 +300,10 @@ pub fn parse_inline(text: &str) -> Vec<Inline> {
 }
 
 fn find_char(chars: &[char], start: usize, target: char) -> Option<usize> {
-    chars[start..].iter().position(|c| *c == target).map(|i| start + i)
+    chars[start..]
+        .iter()
+        .position(|c| *c == target)
+        .map(|i| start + i)
 }
 
 #[cfg(test)]
@@ -255,7 +315,12 @@ mod tests {
         let doc = parse("theorem(Cauchy-Schwarz) #cs {\nSome text $x$.\n}\n");
         assert_eq!(doc.nodes.len(), 1);
         match &doc.nodes[0] {
-            Node::Block { label, args, id, children } => {
+            Node::Block {
+                label,
+                args,
+                id,
+                children,
+            } => {
                 assert_eq!(label, "theorem");
                 assert_eq!(args, &vec!["Cauchy-Schwarz".to_string()]);
                 assert_eq!(id.as_deref(), Some("cs"));
@@ -270,7 +335,12 @@ mod tests {
         let doc = parse("title(2026-09-07 Notes) {}\n");
         assert_eq!(doc.nodes.len(), 1);
         match &doc.nodes[0] {
-            Node::Block { label, args, id, children } => {
+            Node::Block {
+                label,
+                args,
+                id,
+                children,
+            } => {
                 assert_eq!(label, "title");
                 assert_eq!(args, &vec!["2026-09-07 Notes".to_string()]);
                 assert_eq!(id, &None);
@@ -321,9 +391,18 @@ mod tests {
             panic!("expected block")
         };
         assert_eq!(children.len(), 3);
-        assert_eq!(children[0], Node::Paragraph(vec![Inline::Text("line one".to_string())]));
-        assert_eq!(children[1], Node::Paragraph(vec![Inline::Text("line two".to_string())]));
-        assert_eq!(children[2], Node::Paragraph(vec![Inline::Text("line three".to_string())]));
+        assert_eq!(
+            children[0],
+            Node::Paragraph(vec![Inline::Text("line one".to_string())])
+        );
+        assert_eq!(
+            children[1],
+            Node::Paragraph(vec![Inline::Text("line two".to_string())])
+        );
+        assert_eq!(
+            children[2],
+            Node::Paragraph(vec![Inline::Text("line three".to_string())])
+        );
     }
 
     #[test]
@@ -366,7 +445,9 @@ mod tests {
         let doc = parse("$$$\nc = d\n$$$\n");
         assert_eq!(
             doc.nodes,
-            vec![Node::Paragraph(vec![Inline::MathDisplay("c = d".to_string())])]
+            vec![Node::Paragraph(vec![Inline::MathDisplay(
+                "c = d".to_string()
+            )])]
         );
     }
 
@@ -378,7 +459,9 @@ mod tests {
         };
         assert_eq!(
             children,
-            &vec![Node::Paragraph(vec![Inline::MathDisplay("a = b".to_string())])]
+            &vec![Node::Paragraph(vec![Inline::MathDisplay(
+                "a = b".to_string()
+            )])]
         );
     }
 }

@@ -8,51 +8,99 @@ use crate::ast::{Document, Node};
 use crate::defs::{self, LabelMap};
 use crate::{parser, render_html, render_latex};
 
-/// Which output formats to generate. `pdf` implies compiling the `.tex` that
-/// `latex` would produce, even if `latex` itself wasn't requested — the
-/// `.tex` file is written either way as PDF compile input.
+// Templates are included in the binary
+const PREAMBLE_TEX: &str = include_str!("../templates/preamble.tex");
+const STYLE_CSS: &str = include_str!("../templates/style.css");
+
 pub struct Outputs {
     pub html: bool,
     pub latex: bool,
     pub pdf: bool,
 }
 
-pub fn build_all(notes_dir: &Path, out_dir: &Path, template_dir: &Path, defs: &LabelMap, outputs: &Outputs) -> Result<()> {
-    let css = if outputs.html { Some(build_css(defs, template_dir)?) } else { None };
-
-    for entry in std::fs::read_dir(notes_dir)
-        .with_context(|| format!("reading notes dir {}", notes_dir.display()))?
-    {
-        let path = entry?.path();
-        if path.extension().and_then(|e| e.to_str()) == Some("note") {
-            build_one(&path, out_dir, template_dir, defs, outputs, css.as_deref())?;
+/*
+ * Resolves `path` to the list of `.note` files to render. This is either
+ * itself, if it is a file, or every `.note` file directly inside it
+ * (non-recursively), if it is a directory.
+ *
+ * @param path The path to a single note file, or a directory of them.
+ *
+ * @returns A list of note file paths to render.
+ */
+fn collect_note_files(path: &Path) -> Result<Vec<PathBuf>> {
+    if path.is_dir() {
+        let mut files = Vec::new();
+        for entry in std::fs::read_dir(path)
+            .with_context(|| format!("reading notes dir {}", path.display()))?
+        {
+            let entry_path = entry?.path();
+            if entry_path.extension().and_then(|e| e.to_str()) == Some("note") {
+                files.push(entry_path);
+            }
         }
+        Ok(files)
+    } else {
+        Ok(vec![path.to_path_buf()])
+    }
+}
+
+pub fn build_all(path: &Path, out_dir: &Path, defs: &LabelMap, outputs: &Outputs) -> Result<()> {
+    let css = if outputs.html {
+        Some(build_css(defs))
+    } else {
+        None
+    };
+
+    for note_path in collect_note_files(path)? {
+        build_one(&note_path, out_dir, defs, outputs, css.as_deref())?;
     }
     Ok(())
 }
 
-/// Watches both the notes directory and the directory holding `labels.json`
-/// (which also covers `defs/`, since it normally lives alongside it). Any
-/// change reloads the label definitions fresh and rebuilds every note, since
-/// a def-file edit can affect blocks in any note.
-pub fn watch(notes_dir: &Path, out_dir: &Path, template_dir: &Path, labels_json_path: &Path, outputs: &Outputs) -> Result<()> {
-    let mut label_defs = defs::load_all(labels_json_path)?;
-    build_all(notes_dir, out_dir, template_dir, &label_defs, outputs)?;
+/*
+ * Watches the notes path and the definitions directory for changes.
+ * Any change in either triggers a rebuild of all notes.
+ *
+ * @param path The path to a single note file, or a directory of them.
+ * @param out_dir The output directory for rendered files.
+ * @param labels_json_path The path to the labels.json file, if any.
+ * @param outputs The outputs to generate (html, latex, pdf).
+ *
+ * @returns A Result indicating success or failure.
+ */
+pub fn watch(
+    path: &Path,
+    out_dir: &Path,
+    labels_json_path: Option<&Path>,
+    outputs: &Outputs,
+) -> Result<()> {
+    let mut label_defs = match labels_json_path {
+        Some(p) => defs::load_all(p)?,
+        None => LabelMap::new(),
+    };
+    build_all(path, out_dir, &label_defs, outputs)?;
 
     let (tx, rx) = std::sync::mpsc::channel();
     let mut debouncer = new_debouncer(Duration::from_millis(300), tx)?;
     debouncer
         .watcher()
-        .watch(notes_dir, notify::RecursiveMode::Recursive)?;
+        .watch(path, notify::RecursiveMode::Recursive)?;
 
-    let labels_root = labels_json_path.parent().filter(|p| !p.as_os_str().is_empty());
+    let labels_root = labels_json_path
+        .and_then(|p| p.parent())
+        .filter(|p| !p.as_os_str().is_empty());
     if let Some(root) = labels_root {
-        if root != notes_dir {
-            debouncer.watcher().watch(root, notify::RecursiveMode::Recursive)?;
+        if root != path {
+            debouncer
+                .watcher()
+                .watch(root, notify::RecursiveMode::Recursive)?;
         }
     }
 
-    println!("watching {} and defs for changes (ctrl-c to stop)...", notes_dir.display());
+    println!(
+        "watching {} and defs for changes (ctrl-c to stop)...",
+        path.display()
+    );
     for res in rx {
         let events = match res {
             Ok(events) => events,
@@ -65,14 +113,16 @@ pub fn watch(notes_dir: &Path, out_dir: &Path, template_dir: &Path, labels_json_
             continue;
         }
 
-        match defs::load_all(labels_json_path) {
-            Ok(fresh) => label_defs = fresh,
-            Err(e) => {
-                eprintln!("error reloading label defs: {e}");
-                continue;
+        if let Some(p) = labels_json_path {
+            match defs::load_all(p) {
+                Ok(fresh) => label_defs = fresh,
+                Err(e) => {
+                    eprintln!("error reloading label defs: {e}");
+                    continue;
+                }
             }
         }
-        match build_all(notes_dir, out_dir, template_dir, &label_defs, outputs) {
+        match build_all(path, out_dir, &label_defs, outputs) {
             Ok(()) => println!("rebuilt all notes"),
             Err(e) => eprintln!("error rebuilding notes: {e}"),
         }
@@ -83,12 +133,12 @@ pub fn watch(notes_dir: &Path, out_dir: &Path, template_dir: &Path, labels_json_
 fn build_one(
     path: &Path,
     out_dir: &Path,
-    template_dir: &Path,
     defs: &LabelMap,
     outputs: &Outputs,
     css: Option<&str>,
 ) -> Result<()> {
-    let source = std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
+    let source =
+        std::fs::read_to_string(path).with_context(|| format!("reading {}", path.display()))?;
     let parsed = parser::parse(&source);
     let (title, doc) = extract_title(parsed);
     let stem = path
@@ -98,19 +148,36 @@ fn build_one(
         .into_owned();
 
     if outputs.latex || outputs.pdf {
-        let tex_path = write_tex(&doc, &stem, out_dir, template_dir, defs, title.as_deref())?;
+        let tex_path = write_tex(&doc, &stem, out_dir, defs, title.as_deref())?;
         if outputs.pdf {
             compile_pdf(&tex_path, out_dir, &stem)?;
         }
     }
     if outputs.html {
-        write_html(&doc, &stem, out_dir, defs, title.as_deref(), css.unwrap_or_default())?;
+        write_html(
+            &doc,
+            &stem,
+            out_dir,
+            defs,
+            title.as_deref(),
+            css.unwrap_or_default(),
+        )?;
     }
     Ok(())
 }
 
 /// Pulls a top-level `title(...) { }` block's first arg out as the document
 /// title, dropping it from the body so it isn't also rendered as content.
+
+/*
+ * Gets the title of the document from a top-level `title(...) { }` block,
+ * if it exists.
+ *
+ * @param doc The parsed document to extract the title from.
+ *
+ * @returns A tuple containing the optional title and the document with
+ * the title block removed.
+ */
 fn extract_title(doc: Document) -> (Option<String>, Document) {
     let mut title = None;
     let mut nodes = Vec::with_capacity(doc.nodes.len());
@@ -132,16 +199,15 @@ fn write_tex(
     doc: &Document,
     stem: &str,
     out_dir: &Path,
-    template_dir: &Path,
     defs: &LabelMap,
     title: Option<&str>,
 ) -> Result<PathBuf> {
     let body = render_latex::render(doc, defs);
-    let preamble = std::fs::read_to_string(template_dir.join("preamble.tex"))
-        .context("reading templates/preamble.tex")?;
-    let full = preamble
-        .replace("% NOTETAKER:CONTENT", &body)
-        .replacen("\\title{}", &format!("\\title{{{}}}", title.unwrap_or(stem)), 1);
+    let full = PREAMBLE_TEX.replace("% NOTETAKER:CONTENT", &body).replacen(
+        "\\title{}",
+        &format!("\\title{{{}}}", title.unwrap_or(stem)),
+        1,
+    );
 
     let path: PathBuf = out_dir.join(format!("{stem}.tex"));
     std::fs::create_dir_all(out_dir)?;
@@ -149,8 +215,9 @@ fn write_tex(
     Ok(path)
 }
 
-/// Compiles a `.tex` file to PDF via `latexmk`, which reruns as many times
-/// as needed to settle cross-references and the table of contents.
+/*
+ * Compiles a .tex file to PDF using latexmk.
+ */
 fn compile_pdf(tex_path: &Path, out_dir: &Path, stem: &str) -> Result<()> {
     std::fs::create_dir_all(out_dir)?;
 
@@ -161,11 +228,11 @@ fn compile_pdf(tex_path: &Path, out_dir: &Path, stem: &str) -> Result<()> {
         .arg(format!("-outdir={}", out_dir.display()))
         .arg(tex_path)
         .status()
-        .context("running latexmk (is a LaTeX toolchain with latexmk on PATH?)")?;
+        .context("Running latexmk")?;
 
     if !status.success() {
         bail!(
-            "latexmk failed for {stem} — see {} for details",
+            "latexmk failed for {stem}. See {} for details",
             out_dir.join(format!("{stem}.log")).display()
         );
     }
@@ -219,24 +286,25 @@ fn write_html(
     Ok(())
 }
 
-/// Reads the base page stylesheet and concatenates every label's
-/// `style { ... }` block after it, so each note's HTML page can inline all
-/// styling in one `<style>` tag — no relative `<link>` needed, which would
-/// otherwise have to know where `template_dir` sits relative to `out_dir`
-/// (which varies with `--out`).
-fn build_css(defs: &LabelMap, template_dir: &Path) -> Result<String> {
-    let base = std::fs::read_to_string(template_dir.join("style.css"))
-        .context("reading templates/style.css")?;
-
+/*
+ * Concatenates the base page stylesheet with every label's `style { ... }`
+ * block, so each note's HTML page can inline all styling in one `<style>` tag.
+ * No relative `<link>` is needed.
+ *
+ * @param defs The label definitions to extract styles from.
+ *
+ * @returns A string containing the concatenated CSS.
+ */
+fn build_css(defs: &LabelMap) -> String {
     let mut labels: Vec<&String> = defs.keys().collect();
     labels.sort();
 
-    let mut css = base;
+    let mut css = STYLE_CSS.to_string();
     for label in labels {
         if let Some(style) = &defs[label].style {
             css.push('\n');
             css.push_str(style);
         }
     }
-    Ok(css)
+    css
 }
