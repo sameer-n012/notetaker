@@ -1,0 +1,23 @@
+numbered: true
+
+latex {
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.8\textwidth]{$1}
+\par\textbf{Figure $n.} $body
+${id?\label{$id}}
+\end{figure}
+}
+
+html {
+<figure$id_attr>
+<img src="$1" alt="${2?$2}">
+<figcaption><strong>Figure $n.</strong> $body</figcaption>
+</figure>
+}
+
+style {
+figure { margin: 1.5em 0; text-align: center; }
+figure img { max-width: 100%; }
+figcaption { font-size: 0.9em; color: #555; margin-top: 0.5em; }
+}

@@ -1,0 +1,11 @@
+latex {
+\begin{enumerate}
+$body
+\end{enumerate}
+}
+
+html {
+<ol>
+$body
+</ol>
+}
