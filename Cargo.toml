@@ -1,7 +1,10 @@
 [package]
 name = "notetaker"
-version = "0.1.0"
+version = "1.0.0"
 edition = "2024"
+authors = ["Sameer Narendran <sameer.narendran@gmail.com>"]
+license = "MIT"
+repository = "https://github.com/sameer-n012/notetaker"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
