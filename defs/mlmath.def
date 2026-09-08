@@ -1,0 +1,11 @@
+numbered: false
+
+latex {
+\[
+$body
+\]
+}
+
+html {
+<div class="math-display">\[$body\]</div>
+}

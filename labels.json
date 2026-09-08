@@ -1,0 +1,14 @@
+{
+  "theorem": "defs/theorem.def",
+  "lemma": "defs/lemma.def",
+  "definition": "defs/definition.def",
+  "example": "defs/example.def",
+  "remark": "defs/remark.def",
+  "proof": "defs/proof.def",
+  "section": "defs/section.def",
+  "subsection": "defs/subsection.def",
+  "code": "defs/code.def",
+  "mlmath": "defs/mlmath.def",
+  "toc": "defs/toc.def",
+  "subtitle": "defs/subtitle.def"
+}

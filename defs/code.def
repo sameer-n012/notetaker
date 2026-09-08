@@ -1,0 +1,11 @@
+numbered: false
+
+latex {
+\begin{lstlisting}$lang_opt
+$body
+\end{lstlisting}
+}
+
+html {
+<pre><code$class_attr>$body</code></pre>
+}

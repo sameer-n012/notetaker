@@ -1,0 +1,69 @@
+title(2026-09-07 Notes) {}
+
+subtitle {
+A scratch note for exercising the notetaker format
+}
+
+toc {}
+
+section(Section title here) #sec1 {
+
+    definition(inner product) #ip {
+        A map $\langle \cdot, \cdot \rangle: V \times V \to \mathbb{R}$ that is bilinear, symmetric, and positive definite.
+        
+    }
+
+    theorem(cauchy-schwarz) #cs {
+
+        for all vectors $u, v$ in an inner product space:
+        $$$
+        |\langle u, v \rangle| \le \|u\| \|v\|
+        $$$
+
+        alternatively, multiline math can be written as:
+        mlmath {
+            |\langle u, v \rangle| \le \|u\| \|v\|
+        }
+
+        and the triple dollar signs alias to the mlmath block 
+
+        proof {
+            the proof goes here
+            more proof lines
+            more
+        }
+
+        example {
+            this is an example
+        }
+
+    }
+
+    subsection(subsection title) #sub1 {
+
+    remark {
+        @cs follows from pos def required of @ip
+    }
+
+    }
+}
+
+section(second section) #sec2 {
+
+    this is an example of inline `code`
+
+    multiline code can be written as:
+    ```rust
+    some rust code here
+    ```
+
+    or:
+    code(python) {
+        some python code here
+    }
+
+    the backticks alias to the code block and both will be syntax highlighted based on the lang
+
+}
+
+

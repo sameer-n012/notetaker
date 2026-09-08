@@ -1,0 +1,13 @@
+numbered: false
+
+latex {
+\par{\Large\itshape $body\par}
+}
+
+html {
+<div class="subtitle">$body</div>
+}
+
+style {
+.subtitle { font-size: 1.2em; font-style: italic; color: #555; margin-top: -0.5em; margin-bottom: 1.5em; }
+}

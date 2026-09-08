@@ -1,0 +1,23 @@
+body {
+    font-family:
+        "Iowan Old Style", "Palatino Linotype", Palatino, Georgia,
+        "URW Palladio L", serif;
+    font-size: 15px;
+    max-width: 680px;
+    margin: 3em auto;
+    line-height: 1.65;
+    padding: 0 1.5em;
+    color: #1c1c1c;
+    background: #fffdf8;
+}
+
+.math-display {
+    overflow-x: auto;
+    margin: 1em 0;
+}
+
+pre {
+    background: #f4f4f4;
+    padding: 0.75em;
+    overflow-x: auto;
+}

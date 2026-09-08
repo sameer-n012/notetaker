@@ -1,0 +1,19 @@
+numbered: true
+
+latex {
+\par\noindent\textbf{Example $n${1? ($1)}.}${id?\label{$id}}
+$body
+\par
+}
+
+html {
+<div class="example"$id_attr>
+<p class="example-title"><strong>Example $n${1? ($1)}.</strong></p>
+$body
+</div>
+}
+
+style {
+.example { margin: 1.2em 0; padding: 0.75em 1em; border-left: 4px solid #c98a2c; background: #f6f8fc; }
+.example-title { font-weight: bold; margin: 0 0 0.4em 0; }
+}

@@ -1,0 +1,14 @@
+numbered: true
+
+latex {
+\phantomsection\addcontentsline{toc}{section}{$n. $1}
+\section*{$n. $1}${id?\label{$id}}
+$body
+}
+
+html {
+<section$id_attr>
+<h2>$n. $1</h2>
+$body
+</section>
+}

@@ -1,0 +1,19 @@
+numbered: false
+
+latex {
+\begin{proof}
+$body
+\end{proof}
+}
+
+html {
+<div class="proof"$id_attr>
+<p class="proof-title"><strong>Proof.</strong></p>
+$body
+</div>
+}
+
+style {
+.proof { margin: 1.2em 0; padding: 0.75em 1em; border-left: 4px solid #999; font-style: italic; }
+.proof-title { font-weight: bold; font-style: normal; margin: 0 0 0.4em 0; }
+}

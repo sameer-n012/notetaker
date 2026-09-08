@@ -1,0 +1,19 @@
+numbered: true
+
+latex {
+\par\noindent\textbf{Remark $n.}${id?\label{$id}}
+$body
+\par
+}
+
+html {
+<div class="remark"$id_attr>
+<p class="remark-title"><strong>Remark $n.</strong></p>
+$body
+</div>
+}
+
+style {
+.remark { margin: 1.2em 0; padding: 0.75em 1em; border-left: 4px solid #9a5fc9; background: #f6f8fc; }
+.remark-title { font-weight: bold; margin: 0 0 0.4em 0; }
+}

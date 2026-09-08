@@ -1,0 +1,19 @@
+numbered: true
+
+latex {
+\par\noindent\textbf{Definition $n${1? ($1)}.}${id?\label{$id}}
+$body
+\par
+}
+
+html {
+<div class="definition"$id_attr>
+<p class="definition-title"><strong>Definition $n${1? ($1)}.</strong></p>
+$body
+</div>
+}
+
+style {
+.definition { margin: 1.2em 0; padding: 0.75em 1em; border-left: 4px solid #3a9c6e; background: #f6f8fc; }
+.definition-title { font-weight: bold; margin: 0 0 0.4em 0; }
+}

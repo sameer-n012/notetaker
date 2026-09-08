@@ -1,0 +1,14 @@
+numbered: true
+
+latex {
+\phantomsection\addcontentsline{toc}{subsection}{$n. $1}
+\subsection*{$n. $1}${id?\label{$id}}
+$body
+}
+
+html {
+<div class="subsection"$id_attr>
+<h3>$n. $1</h3>
+$body
+</div>
+}

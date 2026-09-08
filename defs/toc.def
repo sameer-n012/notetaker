@@ -1,0 +1,20 @@
+numbered: false
+
+latex {
+\tableofcontents
+}
+
+html {
+<details class="toc" open>
+<summary>Table of Contents</summary>
+$body
+</details>
+}
+
+style {
+.toc summary { cursor: pointer; font-weight: bold; margin-bottom: 0.5em; }
+.toc ul { list-style: none; padding-left: 1.2em; }
+.toc li { margin: 0.3em 0; }
+.toc a { text-decoration: none; }
+.toc a:hover { text-decoration: underline; }
+}
