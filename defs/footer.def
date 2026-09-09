@@ -1,0 +1,15 @@
+numbered: false
+
+latex {
+\bigskip\noindent\hrulefill\par
+{\small $body\par}
+${id?\label{$id}}
+}
+
+html {
+<footer class="footer"$id_attr>$body</footer>
+}
+
+style {
+.footer { margin-top: 2em; padding-top: 0.75em; border-top: 1px solid #ddd; font-size: 0.85em; color: #777; }
+}

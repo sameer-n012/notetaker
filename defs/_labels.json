@@ -17,5 +17,6 @@
   "li": "li.def",
   "link": "link.def",
   "figure": "figure.def",
-  "caption": "caption.def"
+  "caption": "caption.def",
+  "footer": "footer.def"
 }
