@@ -18,5 +18,6 @@
   "link": "link.def",
   "figure": "figure.def",
   "caption": "caption.def",
-  "footer": "footer.def"
+  "footer": "footer.def",
+  "today": "today.def"
 }

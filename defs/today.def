@@ -1,0 +1,15 @@
+numbered: false
+toc: false
+
+latex {
+\date{\today}
+}
+
+html {
+<p class="current_date"></p>
+<script>
+for (const el in document.getElementsByClassName("current_date")) {
+    document.getElementsByClassName("current_date")[el].innerHTML = new Date().toLocaleDateString('en-US', 
+        { year: 'numeric', month: 'long', day: 'numeric' }); }
+</script>
+}

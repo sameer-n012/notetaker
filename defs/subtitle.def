@@ -9,5 +9,5 @@ html {
 }
 
 style {
-.subtitle { font-size: 1.2em; font-style: italic; color: #555; margin-top: -0.5em; margin-bottom: 1.5em; }
+.subtitle { font-size: 1.2em; font-style: italic; color: #555; margin-top: -0.5em; margin-bottom: 1.0em; }
 }
