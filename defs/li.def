@@ -1,0 +1,7 @@
+latex {
+\item $body
+}
+
+html {
+<li>$body</li>
+}

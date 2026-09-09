@@ -4,11 +4,18 @@
   "definition": "definition.def",
   "example": "example.def",
   "remark": "remark.def",
+  "exercise": "exercise.def",
   "proof": "proof.def",
   "section": "section.def",
   "subsection": "subsection.def",
   "code": "code.def",
   "mlmath": "mlmath.def",
   "toc": "toc.def",
-  "subtitle": "subtitle.def"
+  "subtitle": "subtitle.def",
+  "ulist": "ulist.def",
+  "olist": "olist.def",
+  "li": "li.def",
+  "link": "link.def",
+  "figure": "figure.def",
+  "caption": "caption.def"
 }

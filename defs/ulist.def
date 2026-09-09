@@ -1,0 +1,11 @@
+latex {
+\begin{itemize}
+$body
+\end{itemize}
+}
+
+html {
+<ul>
+$body
+</ul>
+}
