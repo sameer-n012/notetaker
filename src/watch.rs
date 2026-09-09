@@ -109,7 +109,11 @@ pub fn watch(
                 continue;
             }
         };
-        if !events.iter().any(|e| e.kind == DebouncedEventKind::Any) {
+
+        if !events
+            .iter()
+            .any(|e| e.kind == DebouncedEventKind::Any && is_source_file(&e.path))
+        {
             continue;
         }
 
@@ -128,6 +132,13 @@ pub fn watch(
         }
     }
     Ok(())
+}
+
+fn is_source_file(path: &Path) -> bool {
+    match path.extension().and_then(|e| e.to_str()) {
+        Some("note") | Some("def") => true,
+        _ => path.file_name().and_then(|f| f.to_str()) == Some("_labels.json"),
+    }
 }
 
 fn build_one(
