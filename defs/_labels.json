@@ -4,6 +4,7 @@
   "definition": "definition.def",
   "example": "example.def",
   "remark": "remark.def",
+  "exercise": "exercise.def",
   "proof": "proof.def",
   "section": "section.def",
   "subsection": "subsection.def",
