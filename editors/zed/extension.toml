@@ -1,0 +1,11 @@
+id = "note"
+name = "Note"
+version = "0.0.1"
+schema_version = 1
+authors = ["Sameer Narendran <sameer.narendran@gmail.com>"]
+description = "Syntax highlighting for notetaker's .note format"
+repository = "https://github.com/sameer-n012/notetaker"
+
+[grammars.note]
+repository = "https://github.com/sameer-n012/notetaker-ts"
+rev = "2ccb325"

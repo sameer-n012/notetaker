@@ -1,0 +1,4 @@
+name = "Note"
+grammar = "note"
+path_suffixes = ["note"]
+line_comments = []

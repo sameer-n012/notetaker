@@ -1,5 +1,6 @@
 mod ast;
 mod defs;
+mod fmt;
 mod numbering;
 mod parser;
 mod render_html;
@@ -54,6 +55,23 @@ struct Args {
     pdf: bool,
 }
 
+#[derive(Parser)]
+struct FmtArgs {
+    /// A single .note file, or a directory of .note files, to format.
+    /// If omitted, reads source from stdin and writes formatted output to
+    /// stdout
+    path: Option<PathBuf>,
+
+    /// Rewrite the file(s) in place instead of printing to stdout.
+    #[arg(long, short)]
+    write: bool,
+
+    /// Check that the file(s) are already formatted; print nothing, and
+    /// exit non-zero if any aren't.
+    #[arg(long)]
+    check: bool,
+}
+
 #[derive(Subcommand)]
 enum Command {
     /// Build the specified .note files once.
@@ -63,14 +81,12 @@ enum Command {
     /// of .note files or the definitions folder Rebuilds all .note files
     /// on any change.
     Watch(Args),
+
+    /// Reformat .note source into canonical layout.
+    Fmt(FmtArgs),
 }
 
-fn main() -> Result<()> {
-    let cli = Cli::parse();
-    let args = match &cli.command {
-        Command::Build(args) | Command::Watch(args) => args,
-    };
-
+fn render(args: &Args, watch_after: bool) -> Result<()> {
     let outputs = Outputs {
         html: args.html,
         latex: args.latex,
@@ -82,16 +98,23 @@ fn main() -> Result<()> {
 
     let labels_json = args.defs.as_ref().map(|d| d.join("_labels.json"));
 
-    match &cli.command {
-        Command::Build(_) => {
-            let label_defs = match &labels_json {
-                Some(p) => defs::load_all(p)?,
-                None => LabelMap::new(),
-            };
-            watch::build_all(&args.path, &args.out, &label_defs, &outputs)?;
-        }
-        Command::Watch(_) => watch::watch(&args.path, &args.out, labels_json.as_deref(), &outputs)?,
+    if watch_after {
+        watch::watch(&args.path, &args.out, labels_json.as_deref(), &outputs)
+    } else {
+        let label_defs = match &labels_json {
+            Some(p) => defs::load_all(p)?,
+            None => LabelMap::new(),
+        };
+        watch::build_all(&args.path, &args.out, &label_defs, &outputs)
     }
+}
 
-    Ok(())
+fn main() -> Result<()> {
+    let cli = Cli::parse();
+
+    match &cli.command {
+        Command::Build(args) => render(args, false),
+        Command::Watch(args) => render(args, true),
+        Command::Fmt(args) => fmt::run(args.path.as_deref(), args.write, args.check),
+    }
 }

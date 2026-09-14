@@ -42,6 +42,17 @@ notetaker watch [--out DIR] [--defs DIR] [--html] [--latex] [--pdf] <PATH>
     - If omitted, no output is generated.
     - `--pdf` requires `latexmk` on `PATH`.
 
+## Formatting
+
+```
+notetaker fmt [--write | --check] [PATH]
+```
+
+Reformats `.note` source into a canonical layout.
+
+- `--write`/`-w` rewrites the file(s) in place.
+- `--check` prints nothing and exits non-zero if any file isn't already formatted, without writing anything. Useful in CI.
+
 ## Definition formats
 
 Definitions are contained in `.def` files and pointed to by `_labels.json`. Both of these must be contained in the

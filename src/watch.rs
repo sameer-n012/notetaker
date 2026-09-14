@@ -27,7 +27,7 @@ pub struct Outputs {
  *
  * @returns A list of note file paths to render.
  */
-fn collect_note_files(path: &Path) -> Result<Vec<PathBuf>> {
+pub(crate) fn collect_note_files(path: &Path) -> Result<Vec<PathBuf>> {
     if path.is_dir() {
         let mut files = Vec::new();
         for entry in std::fs::read_dir(path)
