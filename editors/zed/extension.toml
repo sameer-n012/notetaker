@@ -8,4 +8,4 @@ repository = "https://github.com/sameer-n012/notetaker"
 
 [grammars.note]
 repository = "https://github.com/sameer-n012/notetaker-ts"
-rev = "2ccb325"
+rev = "2ccb3250d2a8c4ed8ca0f22c9189737517bd7707"
