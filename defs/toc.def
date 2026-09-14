@@ -5,7 +5,7 @@ latex {
 }
 
 html {
-<details class="toc" open>
+<details class="toc" closed>
 <summary>Table of Contents</summary>
 $body
 </details>
