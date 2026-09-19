@@ -5,7 +5,10 @@
  * HTML, and whether it is numbered. The `_labels.json` file maps labels to
  * their corresponding .def files. A .def file can have 4 sections:
  * - `property: value` lines: `numbered: true|false` and `toc: true|false`
- *   (whether this label's numbered blocks also get a table-of-contents entry)
+ *   (whether this label's numbered blocks also get a table-of-contents entry),
+ *   plus the optional string properties `latex_join: "sep"` / `html_join:
+ *   "sep"`, which render that output's `$body` as this block's children
+ *   joined by `sep` (each trimmed of surrounding whitespace).
  * - `latex { ... }` section for the LaTeX template
  * - `html { ... }` section for the HTML template
  * - `style { ... }` section for the CSS style (optional)
@@ -20,6 +23,8 @@ use std::path::Path;
 pub struct LabelDef {
     pub numbered: bool,
     pub toc: bool,
+    pub latex_join: Option<String>,
+    pub html_join: Option<String>,
     pub latex_template: String,
     pub html_template: String,
     pub style: Option<String>,
@@ -74,6 +79,8 @@ fn parse(source: &str) -> Result<LabelDef> {
     let lines: Vec<&str> = source.lines().collect();
     let mut i = 0;
     let mut properties = default_properties();
+    let mut latex_join = None;
+    let mut html_join = None;
     let mut latex_template = None;
     let mut html_template = None;
     let mut style = None;
@@ -109,10 +116,14 @@ fn parse(source: &str) -> Result<LabelDef> {
 
         if let Some((key, value)) = trimmed.split_once(':') {
             let key = key.trim();
-            if properties.contains_key(key) {
-                properties.insert(key, value.trim() == "true");
-            } else {
-                bail!("Unknown key '{key}' in def file");
+            let value = value.trim();
+            match key {
+                "latex_join" => latex_join = Some(value.trim_matches('"').to_string()),
+                "html_join" => html_join = Some(value.trim_matches('"').to_string()),
+                _ if properties.contains_key(key) => {
+                    properties.insert(key, value == "true");
+                }
+                _ => bail!("Unknown key '{key}' in def file"),
             }
             i += 1;
             continue;
@@ -124,6 +135,8 @@ fn parse(source: &str) -> Result<LabelDef> {
     Ok(LabelDef {
         numbered: properties["numbered"],
         toc: properties["toc"],
+        latex_join,
+        html_join,
         latex_template: latex_template.context("Definition file missing a 'latex {' section")?,
         html_template: html_template.context("Definition file missing an 'html {' section")?,
         style,
@@ -302,11 +315,22 @@ mod tests {
     }
 
     #[test]
+    fn parses_join_properties() {
+        let src =
+            "latex_join: \" & \"\nhtml_join: \", \"\n\nlatex {\n$body\n}\n\nhtml {\n$body\n}\n";
+        let def = parse(src).unwrap();
+        assert_eq!(def.latex_join.as_deref(), Some(" & "));
+        assert_eq!(def.html_join.as_deref(), Some(", "));
+    }
+
+    #[test]
     fn omitted_properties_use_their_defaults() {
         let src = "latex {\n$body\n}\n\nhtml {\n$body\n}\n";
         let def = parse(src).unwrap();
         assert!(!def.numbered);
         assert!(!def.toc);
+        assert!(def.latex_join.is_none());
+        assert!(def.html_join.is_none());
     }
 
     #[test]

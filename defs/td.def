@@ -1,0 +1,7 @@
+latex {
+$body
+}
+
+html {
+<td>$body</td>
+}

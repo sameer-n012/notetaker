@@ -1,0 +1,9 @@
+latex_join: " & "
+
+latex {
+$body \\ \hline
+}
+
+html {
+<tr>$body</tr>
+}
