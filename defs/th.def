@@ -1,0 +1,7 @@
+latex {
+\textbf{$body}
+}
+
+html {
+<th>$body</th>
+}

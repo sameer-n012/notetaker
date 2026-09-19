@@ -113,25 +113,17 @@ fn render_node(
             children,
         } => {
             let numbered = defs.get(label).is_some_and(|d| d.numbered);
+            let join_sep = defs.get(label).and_then(|d| d.html_join.as_deref());
 
             let (number, body) = if numbered {
                 *counter += 1;
                 let mut path = prefix.to_vec();
                 path.push(*counter);
                 let mut child_counter = 0u32;
-                let mut body = String::new();
-                render_nodes(
-                    children,
-                    defs,
-                    counters,
-                    &path,
-                    &mut child_counter,
-                    &mut body,
-                );
+                let body = render_children(children, defs, counters, &path, &mut child_counter, join_sep);
                 (Some(format_number(&path)), body)
             } else {
-                let mut body = String::new();
-                render_nodes(children, defs, counters, prefix, counter, &mut body);
+                let body = render_children(children, defs, counters, prefix, counter, join_sep);
                 (None, body)
             };
 
@@ -160,6 +152,38 @@ fn render_node(
                 }
             }
         }
+    }
+}
+
+/*
+ * Renders a block's children into its `$body` string. If `join_sep` is
+ * given, each child is rendered separately, trimmed, and joined with the
+ * separator (no trailing separator); otherwise children are concatenated
+ * back-to-back as usual.
+ */
+fn render_children(
+    children: &[Node],
+    defs: &LabelMap,
+    counters: &Counters,
+    prefix: &[u32],
+    counter: &mut u32,
+    join_sep: Option<&str>,
+) -> String {
+    match join_sep {
+        None => {
+            let mut body = String::new();
+            render_nodes(children, defs, counters, prefix, counter, &mut body);
+            body
+        }
+        Some(sep) => children
+            .iter()
+            .map(|child| {
+                let mut part = String::new();
+                render_node(child, defs, counters, prefix, counter, &mut part);
+                part.trim().to_string()
+            })
+            .collect::<Vec<_>>()
+            .join(sep),
     }
 }
 

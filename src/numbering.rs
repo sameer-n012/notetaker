@@ -111,6 +111,8 @@ mod tests {
         LabelDef {
             numbered: true,
             toc,
+            latex_join: None,
+            html_join: None,
             latex_template: String::new(),
             html_template: String::new(),
             style: None,

@@ -19,5 +19,9 @@
   "figure": "figure.def",
   "caption": "caption.def",
   "footer": "footer.def",
-  "today": "today.def"
+  "today": "today.def",
+  "table": "table.def",
+  "tr": "tr.def",
+  "td": "td.def",
+  "th": "th.def"
 }
