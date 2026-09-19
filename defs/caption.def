@@ -1,3 +1,13 @@
+# caption: the caption text of a figure. Nest it inside a `figure` block; the
+# figure supplies the "Figure N." prefix, so this just passes its body through.
+#
+# Example:
+#   figure(diagram.png, A red dot) #fig-dot {
+#       caption {
+#           A caption for the figure.
+#       }
+#   }
+
 latex {
 $body
 }

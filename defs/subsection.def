@@ -1,3 +1,14 @@
+# subsection: a numbered heading, included in the table of contents. Nest it
+# inside a `section`; it is numbered under its parent (e.g. 2.3). Argument 1 is
+# the heading text.
+#
+# Example:
+#   section(Filters) {
+#       subsection(Linear filters) #ss-linear {
+#           Body text.
+#       }
+#   }
+
 numbered: true
 toc: true
 

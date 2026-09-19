@@ -1,3 +1,13 @@
+# proof: an unnumbered proof. Often nested inside a theorem or lemma.
+#
+# Example:
+#   theorem(Trivial) {
+#       Every set is a subset of itself.
+#       proof {
+#           Each element of the set is an element of the set.
+#       }
+#   }
+
 numbered: false
 
 latex {

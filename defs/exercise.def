@@ -1,3 +1,11 @@
+# exercise: a numbered exercise. The optional argument is its title, and the
+# optional #id lets you refer to it elsewhere with @ex-sum.
+#
+# Example:
+#   exercise(sums) #ex-sum {
+#       Show that $1 + 2 + \cdots + n = n(n+1)/2$.
+#   }
+
 numbered: true
 
 latex {

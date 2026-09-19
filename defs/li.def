@@ -1,3 +1,15 @@
+# li: one list item. Use it inside a `ulist` or `olist` block.
+#
+# Example:
+#   ulist {
+#       li {
+#           First item
+#       }
+#       li {
+#           Second item, with math $x = y$
+#       }
+#   }
+
 latex {
 \item $body
 }

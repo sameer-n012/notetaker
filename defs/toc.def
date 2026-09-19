@@ -1,3 +1,9 @@
+# toc: the table of contents. It lists every numbered block whose def sets
+# `toc: true` (section and subsection). Takes no arguments or body.
+#
+# Example:
+#   toc {}
+
 numbered: false
 
 latex {

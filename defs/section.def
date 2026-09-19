@@ -1,3 +1,12 @@
+# section: a numbered top-level heading, included in the table of contents.
+# Argument 1 is the heading text. Numbered blocks nested inside it are numbered
+# under it (e.g. 2.1, 2.2). The optional #id lets you refer to it with @s-intro.
+#
+# Example:
+#   section(Introduction) #s-intro {
+#       Body text, and nested blocks such as definitions or subsections.
+#   }
+
 numbered: true
 toc: true
 

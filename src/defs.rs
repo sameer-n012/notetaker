@@ -3,7 +3,10 @@
  *
  * A .def file defines how a block with a given label is rendered in LaTeX and
  * HTML, and whether it is numbered. The `_labels.json` file maps labels to
- * their corresponding .def files. A .def file can have 4 sections:
+ * their corresponding .def files. A .def file can have 4 sections, plus
+ * comment lines: any top-level line starting with `#` is ignored. Comments are
+ * not recognized inside `latex`/`html`/`style` bodies, which are raw template
+ * text.
  * - `property: value` lines: `numbered: true|false` and `toc: true|false`
  *   (whether this label's numbered blocks also get a table-of-contents entry),
  *   plus the optional string properties `latex_join: "sep"` / `html_join:
@@ -88,7 +91,8 @@ fn parse(source: &str) -> Result<LabelDef> {
     while i < lines.len() {
         let trimmed = lines[i].trim();
 
-        if trimmed.is_empty() {
+        // Skip empty lines and comments
+        if trimmed.is_empty() || trimmed.starts_with('#') {
             i += 1;
             continue;
         }
@@ -337,6 +341,32 @@ mod tests {
     fn unknown_property_key_is_rejected() {
         let src = "foo: true\n\nlatex {\n$body\n}\n\nhtml {\n$body\n}\n";
         assert!(parse(src).is_err());
+    }
+
+    #[test]
+    fn top_level_comment_lines_are_ignored() {
+        let src = "# Theorem-like block.\n\
+                   # numbered: false   <- not a real property line\n\
+                   # latex {\n\
+                   numbered: true\n\
+                   \x20   # indented comment\n\
+                   \n\
+                   latex {\n$body\n}\n\
+                   # between sections\n\
+                   html {\n$body\n}\n";
+        let def = parse(src).unwrap();
+        assert!(def.numbered);
+        assert_eq!(def.latex_template, "$body");
+        assert_eq!(def.html_template, "$body");
+    }
+
+    #[test]
+    fn hash_inside_section_bodies_is_preserved() {
+        let src =
+            "latex {\n# not a comment\n}\n\nhtml {\n$body\n}\n\nstyle {\n#id { color: red; }\n}\n";
+        let def = parse(src).unwrap();
+        assert_eq!(def.latex_template, "# not a comment");
+        assert_eq!(def.style.as_deref(), Some("#id { color: red; }"));
     }
 
     #[test]

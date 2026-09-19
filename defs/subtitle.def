@@ -1,3 +1,11 @@
+# subtitle: italic text shown under the title. Use one block per line.
+#
+# Example:
+#   title(Filters) {}
+#   subtitle {
+#       Sameer Narendran
+#   }
+
 numbered: false
 
 latex {

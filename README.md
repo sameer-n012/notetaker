@@ -68,6 +68,7 @@ The `_labels.json` file maps each label name to its `.def` file (path relative t
 
 A `.def` file has property lines and template sections:
 ```
+# An example comment line.
 numbered: true
 toc: true
 
@@ -86,6 +87,7 @@ style {
 }
 ```
 
+- `# ...` (optional): comment lines, only recognized at the top level.
 - `numbered: true|false` (default `false`): gives the block a hierarchical number if true.
 - `toc: true|false` (default `false`): gives the block a table of contents entry if true.
 - `latex { }` / `html { }` (required): templates for each output type.

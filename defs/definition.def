@@ -1,3 +1,11 @@
+# definition: a numbered definition. The optional argument is its title, and
+# the optional #id lets you refer to it elsewhere with @def-ip.
+#
+# Example:
+#   definition(inner product) #def-ip {
+#       A map $\langle \cdot, \cdot \rangle$ that is bilinear and symmetric.
+#   }
+
 numbered: true
 
 latex {

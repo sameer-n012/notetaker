@@ -1,3 +1,27 @@
+# table: a table. Argument 1 is the LaTeX column spec (one letter per column:
+# l, c or r; e.g. `lr`), used for the PDF. Its children are `tr` (row) blocks,
+# which contain `th` (header cell) and `td` (cell) blocks.
+#
+# Example:
+#   table(lr) {
+#       tr {
+#           th {
+#               Name
+#           }
+#           th {
+#               Score
+#           }
+#       }
+#       tr {
+#           td {
+#               Alice
+#           }
+#           td {
+#               90
+#           }
+#       }
+#   }
+
 latex_join: " "
 
 latex {
