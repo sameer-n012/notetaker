@@ -8,11 +8,7 @@
  *   (whether this label's numbered blocks also get a table-of-contents entry),
  *   plus the optional string properties `latex_join: "sep"` / `html_join:
  *   "sep"`, which render that output's `$body` as this block's children
- *   joined by `sep` (each trimmed of surrounding whitespace) instead of
- *   concatenated back-to-back. These are separate per output format because
- *   the two often need different (or no) separator: e.g. LaTeX table cells
- *   need `" & "` between them, while HTML `<td>` tags are self-delimiting and
- *   need no separator at all.
+ *   joined by `sep` (each trimmed of surrounding whitespace).
  * - `latex { ... }` section for the LaTeX template
  * - `html { ... }` section for the HTML template
  * - `style { ... }` section for the CSS style (optional)
@@ -320,7 +316,8 @@ mod tests {
 
     #[test]
     fn parses_join_properties() {
-        let src = "latex_join: \" & \"\nhtml_join: \", \"\n\nlatex {\n$body\n}\n\nhtml {\n$body\n}\n";
+        let src =
+            "latex_join: \" & \"\nhtml_join: \", \"\n\nlatex {\n$body\n}\n\nhtml {\n$body\n}\n";
         let def = parse(src).unwrap();
         assert_eq!(def.latex_join.as_deref(), Some(" & "));
         assert_eq!(def.html_join.as_deref(), Some(", "));

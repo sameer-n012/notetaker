@@ -120,7 +120,14 @@ fn render_node(
                 let mut path = prefix.to_vec();
                 path.push(*counter);
                 let mut child_counter = 0u32;
-                let body = render_children(children, defs, counters, &path, &mut child_counter, join_sep);
+                let body = render_children(
+                    children,
+                    defs,
+                    counters,
+                    &path,
+                    &mut child_counter,
+                    join_sep,
+                );
                 (Some(format_number(&path)), body)
             } else {
                 let body = render_children(children, defs, counters, prefix, counter, join_sep);
@@ -155,12 +162,6 @@ fn render_node(
     }
 }
 
-/*
- * Renders a block's children into its `$body` string. If `join_sep` is
- * given, each child is rendered separately, trimmed, and joined with the
- * separator (no trailing separator); otherwise children are concatenated
- * back-to-back as usual.
- */
 fn render_children(
     children: &[Node],
     defs: &LabelMap,
