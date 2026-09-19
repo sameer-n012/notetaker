@@ -1,3 +1,14 @@
+# figure: a numbered figure. Argument 1 is the image path and optional
+# argument 2 is the alt text (HTML only). Put a `caption` block inside it for
+# the caption. The optional #id lets you refer to it elsewhere with @fig-dot.
+#
+# Example:
+#   figure(images/diagram.png, A red dot) #fig-dot {
+#       caption {
+#           A caption for the figure.
+#       }
+#   }
+
 numbered: true
 
 latex {

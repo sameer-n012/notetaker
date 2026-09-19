@@ -88,25 +88,24 @@ fn render_node(
             children,
         } => {
             let numbered = defs.get(label).is_some_and(|d| d.numbered);
+            let join_sep = defs.get(label).and_then(|d| d.latex_join.as_deref());
 
             let (number, body) = if numbered {
                 *counter += 1;
                 let mut path = prefix.to_vec();
                 path.push(*counter);
                 let mut child_counter = 0u32;
-                let mut body = String::new();
-                render_nodes(
+                let body = render_children(
                     children,
                     defs,
                     counters,
                     &path,
                     &mut child_counter,
-                    &mut body,
+                    join_sep,
                 );
                 (Some(format_number(&path)), body)
             } else {
-                let mut body = String::new();
-                render_nodes(children, defs, counters, prefix, counter, &mut body);
+                let body = render_children(children, defs, counters, prefix, counter, join_sep);
                 (None, body)
             };
 
@@ -134,6 +133,32 @@ fn render_node(
                 }
             }
         }
+    }
+}
+
+fn render_children(
+    children: &[Node],
+    defs: &LabelMap,
+    counters: &Counters,
+    prefix: &[u32],
+    counter: &mut u32,
+    join_sep: Option<&str>,
+) -> String {
+    match join_sep {
+        None => {
+            let mut body = String::new();
+            render_nodes(children, defs, counters, prefix, counter, &mut body);
+            body
+        }
+        Some(sep) => children
+            .iter()
+            .map(|child| {
+                let mut part = String::new();
+                render_node(child, defs, counters, prefix, counter, &mut part);
+                part.trim().to_string()
+            })
+            .collect::<Vec<_>>()
+            .join(sep),
     }
 }
 

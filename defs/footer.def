@@ -1,3 +1,10 @@
+# footer: small, muted text set off by a rule, for the end of the document.
+#
+# Example:
+#   footer #foot {
+#       These notes are based on the lecture by Prof. Someone.
+#   }
+
 numbered: false
 
 latex {

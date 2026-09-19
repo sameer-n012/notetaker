@@ -1,0 +1,19 @@
+# td: a table cell. Use it inside a `tr` block (see `table`).
+#
+# Example:
+#   tr {
+#       td {
+#           left cell
+#       }
+#       td {
+#           right cell
+#       }
+#   }
+
+latex {
+$body
+}
+
+html {
+<td>$body</td>
+}

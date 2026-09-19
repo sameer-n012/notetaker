@@ -1,3 +1,13 @@
+# theorem: a numbered theorem. The optional argument is its title, and the
+# optional #id lets you refer to it elsewhere with @thm-cs.
+#
+# Example:
+#   theorem(Cauchy-Schwarz) #thm-cs {
+#       For all vectors $u, v$: $|\langle u, v \rangle| \le \|u\| \|v\|$.
+#   }
+#
+#   By @thm-cs, ...
+
 numbered: true
 
 latex {

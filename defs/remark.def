@@ -1,3 +1,11 @@
+# remark: a numbered remark. Any argument is ignored, since the template has no
+# title. The optional #id lets you refer to it elsewhere with @rem-note.
+#
+# Example:
+#   remark #rem-note {
+#       This also holds without the assumption, but the proof is longer.
+#   }
+
 numbered: true
 
 latex {

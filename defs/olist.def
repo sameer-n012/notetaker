@@ -1,3 +1,15 @@
+# olist: an ordered (numbered) list. Its children are `li` blocks.
+#
+# Example:
+#   olist {
+#       li {
+#           Step one
+#       }
+#       li {
+#           Step two
+#       }
+#   }
+
 latex {
 \begin{enumerate}
 $body

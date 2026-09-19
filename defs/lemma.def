@@ -1,3 +1,11 @@
+# lemma: a numbered lemma. The optional argument is its title, and the
+# optional #id lets you refer to it elsewhere with @lem-bound.
+#
+# Example:
+#   lemma(a useful bound) #lem-bound {
+#       For all $x > 0$, $\log x \le x - 1$.
+#   }
+
 numbered: true
 
 latex {
