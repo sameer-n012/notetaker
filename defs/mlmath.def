@@ -1,3 +1,11 @@
+# mlmath: multi-line display math, centered on its own line. A $$$ fence is
+# equivalent.
+#
+# Example:
+#   mlmath {
+#       |\langle u, v \rangle| \le \|u\| \|v\|
+#   }
+
 numbered: false
 
 latex {

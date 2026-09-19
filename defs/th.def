@@ -1,3 +1,15 @@
+# th: a bold table header cell. Use it inside a `tr` block (see `table`).
+#
+# Example:
+#   tr {
+#       th {
+#           Name
+#       }
+#       th {
+#           Score
+#       }
+#   }
+
 latex {
 \textbf{$body}
 }

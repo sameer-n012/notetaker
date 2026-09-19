@@ -1,3 +1,12 @@
+# today: the current date (HTML: filled in by JavaScript when the page is
+# opened; LaTeX: emits \date{\today}). Takes no arguments or body, and is often
+# nested inside a subtitle.
+#
+# Example:
+#   subtitle {
+#       today {}
+#   }
+
 numbered: false
 toc: false
 

@@ -1,3 +1,15 @@
+# ulist: an unordered (bulleted) list. Its children are `li` blocks.
+#
+# Example:
+#   ulist {
+#       li {
+#           First item
+#       }
+#       li {
+#           Second item
+#       }
+#   }
+
 latex {
 \begin{itemize}
 $body

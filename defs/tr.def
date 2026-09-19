@@ -1,3 +1,16 @@
+# tr: a table row. Use it inside a `table` block. In LaTeX its `th`/`td`
+# children are joined with " & " and the row ends with \\ \hline.
+#
+# Example:
+#   tr {
+#       td {
+#           left cell
+#       }
+#       td {
+#           right cell
+#       }
+#   }
+
 latex_join: " & "
 
 latex {
