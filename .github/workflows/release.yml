@@ -37,6 +37,9 @@ jobs:
             exit 1
           fi
 
+      - name: Run tests
+        run: cargo test
+
       - name: Build release binary
         run: cargo build --release --bin notetaker
 
