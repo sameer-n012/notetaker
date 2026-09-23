@@ -1,20 +1,26 @@
 /*
  * Manages the label definitions and template substitution for blocks.
  *
- * A .def file defines how a block with a given label is rendered in LaTeX and
- * HTML, and whether it is numbered. The `_labels.json` file maps labels to
- * their corresponding .def files. A .def file can have 4 sections, plus
- * comment lines: any top-level line starting with `#` is ignored. Comments are
- * not recognized inside `latex`/`html`/`style` bodies, which are raw template
- * text.
+ * A .def file defines how a block with a given label is rendered in LaTeX,
+ * HTML and Markdown, and whether it is numbered. The `_labels.json` file maps
+ * labels to their corresponding .def files. A .def file can have 5 sections,
+ * plus comment lines: any top-level line starting with `#` is ignored.
+ * Comments are not recognized inside `latex`/`html`/`markdown`/`style` bodies,
+ * which are raw template text.
  * - `property: value` lines: `numbered: true|false` and `toc: true|false`
  *   (whether this label's numbered blocks also get a table-of-contents entry),
  *   plus the optional string properties `latex_join: "sep"` / `html_join:
- *   "sep"`, which render that output's `$body` as this block's children
- *   joined by `sep` (each trimmed of surrounding whitespace).
- * - `latex { ... }` section for the LaTeX template
- * - `html { ... }` section for the HTML template
+ *   "sep"` / `markdown_join: "sep"`, which render that output's `$body` as
+ *   this block's children joined by `sep` (each trimmed of surrounding
+ *   whitespace), and `markdown_indent: "prefix"`, which puts `prefix` before
+ *   every line of the Markdown `$body` except the first (for list items and
+ *   other line-based nesting).
+ * - `latex { ... }` section for the LaTeX template (optional)
+ * - `html { ... }` section for the HTML template (optional)
+ * - `markdown { ... }` section for the Markdown template (optional)
  * - `style { ... }` section for the CSS style (optional)
+ * Each renderer treats a missing template section the same as a label with no
+ * def at all, and uses its generic fallback for that output.
  * See `defs/` for examples of `.def` files and `_labels.json` for the mapping.
  */
 
@@ -28,8 +34,11 @@ pub struct LabelDef {
     pub toc: bool,
     pub latex_join: Option<String>,
     pub html_join: Option<String>,
-    pub latex_template: String,
-    pub html_template: String,
+    pub markdown_join: Option<String>,
+    pub markdown_indent: Option<String>,
+    pub latex_template: Option<String>,
+    pub html_template: Option<String>,
+    pub markdown_template: Option<String>,
     pub style: Option<String>,
 }
 
@@ -71,8 +80,8 @@ pub fn load_all(labels_json_path: &Path) -> Result<LabelMap> {
 }
 
 /*
- * A .def file has a `numbered: true|false` line and `latex { ... }` /
- * `html { ... }` / `style { ... }` sections.
+ * A .def file has property lines and optional `latex { ... }` /
+ * `html { ... }` / `markdown { ... }` / `style { ... }` sections.
  *
  * @param source The contents of a .def file.
  *
@@ -84,8 +93,11 @@ fn parse(source: &str) -> Result<LabelDef> {
     let mut properties = default_properties();
     let mut latex_join = None;
     let mut html_join = None;
+    let mut markdown_join = None;
+    let mut markdown_indent = None;
     let mut latex_template = None;
     let mut html_template = None;
+    let mut markdown_template = None;
     let mut style = None;
 
     while i < lines.len() {
@@ -112,6 +124,7 @@ fn parse(source: &str) -> Result<LabelDef> {
             match name.as_str() {
                 "latex" => latex_template = Some(content),
                 "html" => html_template = Some(content),
+                "markdown" => markdown_template = Some(content),
                 "style" => style = Some(content),
                 other => bail!("Unknown section '{other}' in def file"),
             }
@@ -124,6 +137,8 @@ fn parse(source: &str) -> Result<LabelDef> {
             match key {
                 "latex_join" => latex_join = Some(value.trim_matches('"').to_string()),
                 "html_join" => html_join = Some(value.trim_matches('"').to_string()),
+                "markdown_join" => markdown_join = Some(unquote_escaped(value)),
+                "markdown_indent" => markdown_indent = Some(unquote_escaped(value)),
                 _ if properties.contains_key(key) => {
                     properties.insert(key, value == "true");
                 }
@@ -141,10 +156,28 @@ fn parse(source: &str) -> Result<LabelDef> {
         toc: properties["toc"],
         latex_join,
         html_join,
-        latex_template: latex_template.context("Definition file missing a 'latex {' section")?,
-        html_template: html_template.context("Definition file missing an 'html {' section")?,
+        markdown_join,
+        markdown_indent,
+        latex_template,
+        html_template,
+        markdown_template,
         style,
     })
+}
+
+/*
+ * Strips the surrounding `"` quotes from a string property value and expands
+ * `\n` to a newline. Markdown is line-based, so its join separators (e.g. a
+ * new list item, `"\n- "`) must be able to start a new line. The `\n` escape
+ * is only expanded for the Markdown properties, so existing `latex_join`
+ * values such as `" \\ "` keep their literal backslashes.
+ *
+ * @param value The raw property value, e.g. `"\n- "`.
+ *
+ * @return The unquoted value with `\n` expanded.
+ */
+fn unquote_escaped(value: &str) -> String {
+    value.trim_matches('"').replace("\\n", "\n")
 }
 
 /*
@@ -313,9 +346,34 @@ mod tests {
         let def = parse(src).unwrap();
         assert!(def.numbered);
         assert!(!def.toc);
-        assert!(def.latex_template.contains("$body"));
-        assert!(def.html_template.contains("$n"));
+        assert!(def.latex_template.unwrap().contains("$body"));
+        assert!(def.html_template.unwrap().contains("$n"));
+        assert!(def.markdown_template.is_none());
         assert!(def.style.is_none());
+    }
+
+    #[test]
+    fn parses_markdown_section_and_properties() {
+        let src = "markdown_join: \"\\n- \"\nmarkdown_indent: \"   \"\n\nmarkdown {\n- $body\n}\n";
+        let def = parse(src).unwrap();
+        assert_eq!(def.markdown_template.as_deref(), Some("- $body"));
+        assert_eq!(def.markdown_join.as_deref(), Some("\n- "));
+        assert_eq!(def.markdown_indent.as_deref(), Some("   "));
+    }
+
+    #[test]
+    fn all_template_sections_are_optional() {
+        let def = parse("numbered: true\n").unwrap();
+        assert!(def.numbered);
+        assert!(def.latex_template.is_none());
+        assert!(def.html_template.is_none());
+        assert!(def.markdown_template.is_none());
+    }
+
+    #[test]
+    fn latex_join_backslashes_stay_literal() {
+        let def = parse("latex_join: \" \\n \"\n").unwrap();
+        assert_eq!(def.latex_join.as_deref(), Some(" \\n "));
     }
 
     #[test]
@@ -335,6 +393,8 @@ mod tests {
         assert!(!def.toc);
         assert!(def.latex_join.is_none());
         assert!(def.html_join.is_none());
+        assert!(def.markdown_join.is_none());
+        assert!(def.markdown_indent.is_none());
     }
 
     #[test]
@@ -356,8 +416,8 @@ mod tests {
                    html {\n$body\n}\n";
         let def = parse(src).unwrap();
         assert!(def.numbered);
-        assert_eq!(def.latex_template, "$body");
-        assert_eq!(def.html_template, "$body");
+        assert_eq!(def.latex_template.as_deref(), Some("$body"));
+        assert_eq!(def.html_template.as_deref(), Some("$body"));
     }
 
     #[test]
@@ -365,7 +425,7 @@ mod tests {
         let src =
             "latex {\n# not a comment\n}\n\nhtml {\n$body\n}\n\nstyle {\n#id { color: red; }\n}\n";
         let def = parse(src).unwrap();
-        assert_eq!(def.latex_template, "# not a comment");
+        assert_eq!(def.latex_template.as_deref(), Some("# not a comment"));
         assert_eq!(def.style.as_deref(), Some("#id { color: red; }"));
     }
 

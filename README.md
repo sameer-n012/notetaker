@@ -1,6 +1,6 @@
 # Notetaker
 
-A CLI that renders a lightweight `.note` markup format into HTML, LaTeX, and PDF.
+A CLI that renders a lightweight `.note` markup format into HTML, LaTeX, PDF, and Markdown.
 Block types are user-defined via `.def` files, so the rendering of each block is fully configurable.
 
 ## Note grammar
@@ -23,8 +23,8 @@ See [examples/](examples/) for more.
 ## Running
 
 ```
-notetaker build [--out DIR] [--defs DIR] [--html] [--latex] [--pdf] <PATH>
-notetaker watch [--out DIR] [--defs DIR] [--html] [--latex] [--pdf] <PATH>
+notetaker build [--out DIR] [--defs DIR] [--html] [--latex] [--pdf] [--markdown] <PATH>
+notetaker watch [--out DIR] [--defs DIR] [--html] [--latex] [--pdf] [--markdown] <PATH>
 ```
 
 - `build` renders once and exits.
@@ -37,10 +37,11 @@ notetaker watch [--out DIR] [--defs DIR] [--html] [--latex] [--pdf] <PATH>
     - Defaults to the current working directory
 - `--defs` is a directory of `.def` files.
     - If omitted, no label definitions load, and every block falls back to a generic, unstyled environment/div.
-- `--pdf`, `--html`, `--latex` specify which outputs to generate.
+- `--pdf`, `--html`, `--latex`, `--markdown` specify which outputs to generate.
     - Any combination of them can be passed.
     - If omitted, no output is generated.
     - `--pdf` requires `latexmk` on `PATH`.
+    - `--markdown` (alias `--md`) writes GitHub-flavored Markdown with `$...$` / `$$...$$` math.
 
 ## Formatting
 
@@ -82,6 +83,11 @@ html {
 <div class="theorem">$n${1? ($1)}: $body</div>
 }
 
+markdown {
+**Theorem $n${1? ($1)}.**
+$body
+}
+
 style {
 .theorem { border-left: 3px solid blue; }
 }
@@ -90,13 +96,27 @@ style {
 - `# ...` (optional): comment lines, only recognized at the top level.
 - `numbered: true|false` (default `false`): gives the block a hierarchical number if true.
 - `toc: true|false` (default `false`): gives the block a table of contents entry if true.
-- `latex { }` / `html { }` (required): templates for each output type.
+- `latex_join: "sep"` / `html_join: "sep"` / `markdown_join: "sep"` (optional): render `$body` for that output as the
+  children joined by `sep`. In `markdown_join`, `\n` is a newline (e.g. `"\n- "` starts a new list item).
+- `markdown_indent: "prefix"` (optional): puts `prefix` before each line of the Markdown `$body` after the first, to keep
+  nested content inside a list item.
+- `latex { }` / `html { }` / `markdown { }` (optional): templates for each output type.
+    - If a section is missing, that output uses the same fallback as a label with no def: a LaTeX environment named
+      after the label, a `<div>` with the label as its class, or the plain body in Markdown.
 - `style { }` (default empty): optional CSS for the block.
 
 Template placeholders:
 - `$1`, `$2`, ...: block arguments.
 - `$body`: rendered children.
 - `$id`/`$id_attr`: the block's ID.
+- `$n`: the block's number (numbered labels only).
+- `${1?text}` / `${id?text}`: `text` only if argument 1 (or the ID) is given.
+
+Markdown-only placeholders:
+- `$head` / `$rest`: the first rendered child, and the other children.
+- `$md_rule`: a table delimiter row made from argument 1 when it is a column spec (e.g. `lr` gives `| --- | --: |`).
+- `$today`: the build date (UTC).
+- `$fence` (`code` only): a backtick fence that is longer than any backtick run in the code.
 
 See [defs/](defs/) for more.
 

@@ -5,6 +5,7 @@ mod numbering;
 mod parser;
 mod render_html;
 mod render_latex;
+mod render_markdown;
 mod watch;
 
 use anyhow::Result;
@@ -26,7 +27,7 @@ struct Args {
     /// There is no recursive search in a directory.
     path: PathBuf,
 
-    /// Directory to write generated output into (.html/.tex/.pdf files land
+    /// Directory to write generated output into (.html/.tex/.pdf/.md files land
     /// directly in it, alongside each other).
     #[arg(long, default_value = ".")]
     out: PathBuf,
@@ -53,6 +54,12 @@ struct Args {
     /// generated. You must pass at least one to produce output.
     #[arg(long)]
     pdf: bool,
+
+    /// Generate Markdown (GitHub-flavored, with $...$ / $$...$$ math).
+    /// If none of the output types are given, nothing is
+    /// generated. You must pass at least one to produce output.
+    #[arg(long, visible_alias = "md")]
+    markdown: bool,
 }
 
 #[derive(Parser)]
@@ -91,8 +98,9 @@ fn render(args: &Args, watch_after: bool) -> Result<()> {
         html: args.html,
         latex: args.latex,
         pdf: args.pdf,
+        markdown: args.markdown,
     };
-    if !outputs.html && !outputs.latex && !outputs.pdf {
+    if !outputs.html && !outputs.latex && !outputs.pdf && !outputs.markdown {
         eprintln!("No output format requested.");
     }
 
