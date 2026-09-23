@@ -41,7 +41,7 @@ notetaker watch [--out DIR] [--defs DIR] [--html] [--latex] [--pdf] [--markdown]
     - Any combination of them can be passed.
     - If omitted, no output is generated.
     - `--pdf` requires `latexmk` on `PATH`.
-    - `--markdown` (alias `--md`) writes GitHub-flavored Markdown with `$...$` / `$$...$$` math.
+    - `--markdown` (alias `--md`) writes GitHub-flavored Markdown.
 
 ## Formatting
 
@@ -101,8 +101,7 @@ style {
 - `markdown_indent: "prefix"` (optional): puts `prefix` before each line of the Markdown `$body` after the first, to keep
   nested content inside a list item.
 - `latex { }` / `html { }` / `markdown { }` (optional): templates for each output type.
-    - If a section is missing, that output uses the same fallback as a label with no def: a LaTeX environment named
-      after the label, a `<div>` with the label as its class, or the plain body in Markdown.
+    - If a section is missing, that output uses the same fallback as a label with no def: a LaTeX environment named after the label, a `<div>` with the label as its class, or the plain body in Markdown.
 - `style { }` (default empty): optional CSS for the block.
 
 Template placeholders:
