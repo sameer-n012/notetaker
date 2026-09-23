@@ -12,3 +12,7 @@ latex {
 html {
 <a href="$1">$2</a>
 }
+
+markdown {
+[$2]($1)
+}

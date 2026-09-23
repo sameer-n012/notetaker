@@ -22,3 +22,8 @@ for (const el in document.getElementsByClassName("current_date")) {
         { year: 'numeric', month: 'long', day: 'numeric' }); }
 </script>
 }
+
+# $today is the build date (UTC), since Markdown can't run scripts.
+markdown {
+$today
+}

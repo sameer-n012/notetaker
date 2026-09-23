@@ -21,6 +21,11 @@ $body
 </div>
 }
 
+markdown {
+**Remark $n.**${id?<a id="$id"></a>}
+$body
+}
+
 style {
 .remark { margin: 1.2em 0; padding: 0.75em 1em; border-left: 4px solid #9a5fc9; background: #f6f8fc; }
 .remark-title { font-weight: bold; margin: 0 0 0.4em 0; }

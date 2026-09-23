@@ -24,6 +24,10 @@
 
 latex_join: " "
 
+# Markdown: one row per line. The first row is the header, so $md_rule (the
+# delimiter row built from the column spec) goes between $head and $rest.
+markdown_join: "\n"
+
 latex {
 \vspace{1em}
 \begin{tabular}{$1}
@@ -36,6 +40,12 @@ html {
 <table>
 $body
 </table>
+}
+
+markdown {
+$head
+$md_rule
+$rest
 }
 
 style {

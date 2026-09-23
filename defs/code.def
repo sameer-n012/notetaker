@@ -18,3 +18,10 @@ $body
 html {
 <pre><code$class_attr>$body</code></pre>
 }
+
+# $fence is a backtick fence longer than any backtick run in the source.
+markdown {
+$fence${1?$1}
+$body
+$fence
+}

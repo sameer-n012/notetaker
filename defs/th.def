@@ -17,3 +17,8 @@ latex {
 html {
 <th>$body</th>
 }
+
+# The first row of a Markdown table is always its header row, so no bold.
+markdown {
+$body
+}
