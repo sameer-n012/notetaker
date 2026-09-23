@@ -10,7 +10,6 @@
 #       }
 #   }
 
-# Markdown: each `li` child starts on a new line with a `- ` marker.
 markdown_join: "\n- "
 
 latex {

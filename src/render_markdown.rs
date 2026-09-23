@@ -1,22 +1,6 @@
 /*
- * Manages rendering of a Document into Markdown (GitHub-flavored, with
- * `$...$` / `$$...$$` math), using the definitions in a LabelMap.
- *
- * Markdown is line-based, so a template can't always build its structure from
- * `$body` alone. Besides the standard placeholders (see `defs::substitute`),
- * this renderer gives every Markdown template these values:
- * - `$head` / `$rest`: the first rendered child, and the remaining children
- *   (joined the same way as `$body`). A table uses them to put the GFM
- *   delimiter row after its header row.
- * - `$md_rule`: a GFM table delimiter row (e.g. `| --- | --: |`) built from
- *   argument 1 when it is a column spec of `l`/`c`/`r` letters, else empty.
- * - `$today`: the build date in UTC, e.g. `September 23, 2026`.
- * The `code` template also gets `$fence`: a backtick fence longer than any
- * backtick run in the source, so the source can't close it early.
- *
- * A def's `markdown_indent` property puts its prefix before every line of
- * `$body` after the first, so nested content (e.g. a sublist in a list item)
- * stays inside its parent.
+ * Manages rendering of a Document into Markdown, using the definitions in a
+ * LabelMap.
  */
 
 use crate::ast::{Document, Inline, Node};
@@ -24,7 +8,6 @@ use crate::defs::{substitute, LabelMap};
 use crate::numbering::{format_number, Counters, TocEntry};
 use std::time::{SystemTime, UNIX_EPOCH};
 
-/// Values shared by every node while rendering one document.
 struct Ctx<'a> {
     defs: &'a LabelMap,
     counters: Counters,
@@ -41,7 +24,6 @@ pub fn render(doc: &Document, defs: &LabelMap) -> String {
     let mut out = String::new();
     render_nodes(&doc.nodes, &ctx, &[], &mut counter, &mut out);
 
-    // Each node ends with a blank line; the file ends with one newline.
     let mut out = out.trim_end().to_string();
     out.push('\n');
     out
@@ -83,7 +65,10 @@ fn render_node(node: &Node, ctx: &Ctx, prefix: &[u32], counter: &mut u32, out: &
                         &[("fence", fence.as_str()), today],
                     )
                 }
-                None => format!("{fence}{}\n{source}\n{fence}", lang.as_deref().unwrap_or("")),
+                None => format!(
+                    "{fence}{}\n{source}\n{fence}",
+                    lang.as_deref().unwrap_or("")
+                ),
             };
             push_block(out, &rendered);
         }
@@ -146,8 +131,6 @@ fn render_node(node: &Node, ctx: &Ctx, prefix: &[u32], counter: &mut u32, out: &
                         ],
                     )
                 }
-                // No def file (or no markdown section) for this label: keep
-                // the body, plus an anchor so `@id` links still resolve.
                 None => match id {
                     Some(id) => format!("<a id=\"{id}\"></a>\n\n{body}"),
                     None => body,
@@ -159,9 +142,8 @@ fn render_node(node: &Node, ctx: &Ctx, prefix: &[u32], counter: &mut u32, out: &
 }
 
 /*
- * Renders each child on its own, so a block can join them with a separator or
- * use the first child apart from the rest. Without a separator, the parts
- * concatenate to the same text as rendering the children in one pass.
+ * Renders each child. Without a separator, the parts concatenate to the same
+ * text as rendering the children in one pass.
  */
 fn render_parts(children: &[Node], ctx: &Ctx, prefix: &[u32], counter: &mut u32) -> Vec<String> {
     children
@@ -177,20 +159,15 @@ fn render_parts(children: &[Node], ctx: &Ctx, prefix: &[u32], counter: &mut u32)
 fn join_parts(parts: &[String], join_sep: Option<&str>) -> String {
     match join_sep {
         None => parts.concat(),
-        Some(sep) => parts
-            .iter()
-            .map(|p| p.trim())
-            .collect::<Vec<_>>()
-            .join(sep),
+        Some(sep) => parts.iter().map(|p| p.trim()).collect::<Vec<_>>().join(sep),
     }
 }
 
 /*
  * Appends one rendered block, followed by a blank line to separate it from
  * the next block. Leading newlines (e.g. from a `${id?...}` group that
- * rendered nothing on a template's first line) are dropped, and an empty
- * block adds nothing, so no extra blank lines appear. Leading spaces are kept,
- * because Markdown gives them meaning.
+ * rendered nothing on a template's first line) are dropped. Leading spaces are
+ * kept.
  */
 fn push_block(out: &mut String, rendered: &str) {
     let rendered = rendered.trim_start_matches('\n').trim_end();
@@ -201,10 +178,7 @@ fn push_block(out: &mut String, rendered: &str) {
 }
 
 /*
- * Puts `prefix` before every line of `text` except the first. The first line
- * follows the template text before `$body` (e.g. a list marker). A blank line
- * gets only the prefix with its trailing whitespace removed: `"   "` gives an
- * empty line, and `"> "` gives `">"`, which keeps a blockquote unbroken.
+ * Puts `prefix` before every line of `text` except the first.
  */
 fn indent_after_first(text: &str, prefix: &str) -> String {
     let mut lines = text.split('\n');
@@ -221,18 +195,13 @@ fn indent_after_first(text: &str, prefix: &str) -> String {
     out
 }
 
-/*
- * Gets the Markdown template for `label`. None if the label has no def, or
- * its def has no `markdown { }` section; both cases use the same generic
- * fallback.
- */
 fn template<'a>(defs: &'a LabelMap, label: &str) -> Option<&'a str> {
     defs.get(label).and_then(|d| d.markdown_template.as_deref())
 }
 
 /*
- * Builds a GFM table delimiter row from a LaTeX-style column spec, e.g. `lcr`
- * gives `| --- | :-: | --: |`. `|` rules and spaces in the spec are ignored.
+ * Builds a Markdown table delimiter row from a LaTeX column spec, `lcr`
+ * gives `| --- | :-: | --: |`. `|`.
  *
  * @param spec The column spec (a table's argument 1), if given.
  *
@@ -257,7 +226,6 @@ fn md_rule(spec: Option<&str>) -> String {
     }
 }
 
-/// Renders ToC entries as a nested bulleted list of links.
 fn render_toc(entries: &[TocEntry], depth: usize, out: &mut String) {
     let pad = "  ".repeat(depth);
     for entry in entries {
@@ -273,8 +241,6 @@ fn render_toc(entries: &[TocEntry], depth: usize, out: &mut String) {
 fn render_inlines(inlines: &[Inline], counters: &Counters, out: &mut String) {
     for inline in inlines {
         match inline {
-            // Text is passed through as-is (like the LaTeX renderer), so
-            // Markdown syntax written in a note still works.
             Inline::Text(t) => out.push_str(t),
             Inline::Code(c) => out.push_str(&code_span(c)),
             Inline::MathInline(m) => out.push_str(&format!("${m}$")),
@@ -289,8 +255,7 @@ fn render_inlines(inlines: &[Inline], counters: &Counters, out: &mut String) {
 
 /*
  * Wraps inline code in a backtick run longer than any run inside it. Content
- * that starts or ends with a backtick is padded with a space, as CommonMark
- * requires (the renderer strips one space from each side).
+ * that starts or ends with a backtick is padded with a space.
  */
 fn code_span(code: &str) -> String {
     let ticks = "`".repeat(longest_backtick_run(code) + 1);
@@ -322,8 +287,7 @@ const MONTHS: [&str; 12] = [
 
 /*
  * Formats the current UTC date like the HTML `today` output, e.g.
- * `September 23, 2026`. Markdown has no scripts, so the date is fixed when the
- * file is built (as LaTeX's `\today` is fixed when the PDF compiles).
+ * `September 23, 2026`.
  */
 fn today_utc() -> String {
     // A system clock set before 1970 is a broken environment; show the epoch
@@ -336,12 +300,6 @@ fn today_utc() -> String {
     format!("{} {d}, {y}", MONTHS[(m - 1) as usize])
 }
 
-/*
- * Converts a count of days since 1970-01-01 to a (year, month, day) date in
- * the proleptic Gregorian calendar. This is Howard Hinnant's
- * `civil_from_days` algorithm; it shifts the year to start in March, so the
- * leap day is the last day of the shifted year.
- */
 fn civil_from_days(days: i64) -> (i64, u32, u32) {
     let z = days + 719_468;
     let era = z.div_euclid(146_097);
@@ -362,8 +320,6 @@ mod tests {
     use crate::parser::parse;
     use std::path::Path;
 
-    /// Loads the repository's own `defs/` directory, so the tests also check
-    /// the shipped `markdown { }` templates.
     fn repo_defs() -> LabelMap {
         let path = Path::new(env!("CARGO_MANIFEST_DIR")).join("defs/_labels.json");
         defs::load_all(&path).unwrap()

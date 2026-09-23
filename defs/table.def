@@ -23,9 +23,6 @@
 #   }
 
 latex_join: " "
-
-# Markdown: one row per line. The first row is the header, so $md_rule (the
-# delimiter row built from the column spec) goes between $head and $rest.
 markdown_join: "\n"
 
 latex {

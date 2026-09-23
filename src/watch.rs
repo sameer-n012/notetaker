@@ -181,9 +181,6 @@ fn build_one(
     Ok(())
 }
 
-/// Pulls a top-level `title(...) { }` block's first arg out as the document
-/// title, dropping it from the body so it isn't also rendered as content.
-
 /*
  * Gets the title of the document from a top-level `title(...) { }` block,
  * if it exists.

@@ -15,10 +15,10 @@
  *   whitespace), and `markdown_indent: "prefix"`, which puts `prefix` before
  *   every line of the Markdown `$body` except the first (for list items and
  *   other line-based nesting).
- * - `latex { ... }` section for the LaTeX template (optional)
- * - `html { ... }` section for the HTML template (optional)
- * - `markdown { ... }` section for the Markdown template (optional)
- * - `style { ... }` section for the CSS style (optional)
+ * - `latex { ... }` section for the LaTeX template
+ * - `html { ... }` section for the HTML template
+ * - `markdown { ... }` section for the Markdown template
+ * - `style { ... }` section for the CSS style
  * Each renderer treats a missing template section the same as a label with no
  * def at all, and uses its generic fallback for that output.
  * See `defs/` for examples of `.def` files and `_labels.json` for the mapping.
@@ -167,12 +167,9 @@ fn parse(source: &str) -> Result<LabelDef> {
 
 /*
  * Strips the surrounding `"` quotes from a string property value and expands
- * `\n` to a newline. Markdown is line-based, so its join separators (e.g. a
- * new list item, `"\n- "`) must be able to start a new line. The `\n` escape
- * is only expanded for the Markdown properties, so existing `latex_join`
- * values such as `" \\ "` keep their literal backslashes.
+ * `\n` to a newline.
  *
- * @param value The raw property value, e.g. `"\n- "`.
+ * @param value The raw property value.
  *
  * @return The unquoted value with `\n` expanded.
  */
@@ -318,6 +315,8 @@ pub fn substitute(
  *
  * @param chars The characters of the template string.
  * @param start The index of the first character after the opening `{`.
+ *
+ * @return The index of the matching `}`, or None if not found.
  */
 fn find_matching_brace(chars: &[char], start: usize) -> Option<usize> {
     let mut depth = 1;

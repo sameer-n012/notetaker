@@ -18,12 +18,11 @@ html {
 <p class="current_date"></p>
 <script>
 for (const el in document.getElementsByClassName("current_date")) {
-    document.getElementsByClassName("current_date")[el].innerHTML = new Date().toLocaleDateString('en-US', 
+    document.getElementsByClassName("current_date")[el].innerHTML = new Date().toLocaleDateString('en-US',
         { year: 'numeric', month: 'long', day: 'numeric' }); }
 </script>
 }
 
-# $today is the build date (UTC), since Markdown can't run scripts.
 markdown {
 $today
 }

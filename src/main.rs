@@ -34,8 +34,8 @@ struct Args {
 
     /// Directory holding label `.def` files and their index, `_labels.json`.
     /// If omitted, no label definitions are loaded at all — every block
-    /// falls back to a generic, unstyled environment/div. You're
-    /// responsible for pointing this at a defs directory you maintain.
+    /// falls back to a generic, unstyled environment/div. The user is
+    /// responsible for pointing this at a defs directory they maintain.
     #[arg(long)]
     defs: Option<PathBuf>,
 
@@ -49,14 +49,13 @@ struct Args {
     #[arg(long)]
     latex: bool,
 
-    /// Generate PDF (using latexmk). Also writes the .tex the PDF compiles from.
-    /// If none of the output types are given, nothing is
+    /// Generate PDF (using latexmk). Also writes the .tex the PDF compiles
+    /// from. If none of the output types are given, nothing is
     /// generated. You must pass at least one to produce output.
     #[arg(long)]
     pdf: bool,
 
-    /// Generate Markdown (GitHub-flavored, with $...$ / $$...$$ math).
-    /// If none of the output types are given, nothing is
+    /// Generate Markdown. If none of the output types are given, nothing is
     /// generated. You must pass at least one to produce output.
     #[arg(long, visible_alias = "md")]
     markdown: bool,
