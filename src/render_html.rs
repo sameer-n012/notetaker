@@ -39,10 +39,10 @@ fn render_node(
     match node {
         Node::Paragraph(inlines) => {
             if let [Inline::MathDisplay(m)] = inlines.as_slice() {
-                match defs.get("mlmath") {
-                    Some(def) => {
+                match template(defs, "mlmath") {
+                    Some(tpl) => {
                         out.push_str(&substitute(
-                            &def.html_template,
+                            tpl,
                             &[],
                             &escape(m),
                             None,
@@ -62,15 +62,15 @@ fn render_node(
                 out.push_str("</p>\n");
             }
         }
-        Node::Code { lang, source } => match defs.get("code") {
-            Some(def) => {
+        Node::Code { lang, source } => match template(defs, "code") {
+            Some(tpl) => {
                 let class_attr = lang
                     .as_deref()
                     .map(|l| format!(" class=\"language-{l}\""))
                     .unwrap_or_default();
                 let args: Vec<String> = lang.iter().cloned().collect();
                 out.push_str(&substitute(
-                    &def.html_template,
+                    tpl,
                     &args,
                     &escape(source),
                     None,
@@ -93,10 +93,10 @@ fn render_node(
         Node::Block {
             label, args, id, ..
         } if label == "toc" => {
-            if let Some(def) = defs.get("toc") {
+            if let Some(tpl) = template(defs, "toc") {
                 let toc_html = render_toc(&counters.toc);
                 out.push_str(&substitute(
-                    &def.html_template,
+                    tpl,
                     args,
                     &toc_html,
                     id.as_deref(),
@@ -134,10 +134,10 @@ fn render_node(
                 (None, body)
             };
 
-            match defs.get(label) {
-                Some(def) => {
+            match template(defs, label) {
+                Some(tpl) => {
                     out.push_str(&substitute(
-                        &def.html_template,
+                        tpl,
                         args,
                         body.trim_end(),
                         id.as_deref(),
@@ -147,8 +147,8 @@ fn render_node(
                     out.push('\n');
                 }
                 None => {
-                    // if no definition, render as a div with the label as
-                    // the class
+                    // if no definition (or no html section), render as a div
+                    // with the label as the class
                     let id_attr = id
                         .as_ref()
                         .map(|i| format!(" id=\"{i}\""))
@@ -160,6 +160,14 @@ fn render_node(
             }
         }
     }
+}
+
+/*
+ * Gets the HTML template for `label`. None if the label has no def, or its
+ * def has no `html { }` section; both cases use the same generic fallback.
+ */
+fn template<'a>(defs: &'a LabelMap, label: &str) -> Option<&'a str> {
+    defs.get(label).and_then(|d| d.html_template.as_deref())
 }
 
 fn render_children(

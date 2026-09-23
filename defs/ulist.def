@@ -10,6 +10,8 @@
 #       }
 #   }
 
+markdown_join: "\n- "
+
 latex {
 \begin{itemize}
 $body
@@ -20,4 +22,8 @@ html {
 <ul>
 $body
 </ul>
+}
+
+markdown {
+- $body
 }

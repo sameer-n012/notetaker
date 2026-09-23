@@ -23,6 +23,7 @@
 #   }
 
 latex_join: " "
+markdown_join: "\n"
 
 latex {
 \vspace{1em}
@@ -36,6 +37,12 @@ html {
 <table>
 $body
 </table>
+}
+
+markdown {
+$head
+$md_rule
+$rest
 }
 
 style {

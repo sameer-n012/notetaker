@@ -17,6 +17,12 @@ html {
 <footer class="footer"$id_attr>$body</footer>
 }
 
+markdown {
+---
+
+${id?<a id="$id"></a>}$body
+}
+
 style {
 .footer { margin-top: 2em; padding-top: 0.75em; border-top: 1px solid #ddd; font-size: 0.85em; color: #777; }
 }

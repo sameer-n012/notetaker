@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use crate::ast::{Document, Node};
 use crate::defs::{self, LabelMap};
-use crate::{parser, render_html, render_latex};
+use crate::{parser, render_html, render_latex, render_markdown};
 
 // Templates are included in the binary
 const PREAMBLE_TEX: &str = include_str!("../templates/preamble.tex");
@@ -16,6 +16,7 @@ pub struct Outputs {
     pub html: bool,
     pub latex: bool,
     pub pdf: bool,
+    pub markdown: bool,
 }
 
 /*
@@ -174,11 +175,11 @@ fn build_one(
             css.unwrap_or_default(),
         )?;
     }
+    if outputs.markdown {
+        write_markdown(&doc, &stem, out_dir, defs, title.as_deref())?;
+    }
     Ok(())
 }
-
-/// Pulls a top-level `title(...) { }` block's first arg out as the document
-/// title, dropping it from the body so it isn't also rendered as content.
 
 /*
  * Gets the title of the document from a top-level `title(...) { }` block,
@@ -292,6 +293,29 @@ fn write_html(
     );
 
     let path: PathBuf = out_dir.join(format!("{stem}.html"));
+    std::fs::create_dir_all(out_dir)?;
+    std::fs::write(&path, page)?;
+    Ok(())
+}
+
+/*
+ * Writes `<stem>.md`. The title (if any) becomes a level-1 heading; sections
+ * use level 2 and below (see `defs/section.def`).
+ */
+fn write_markdown(
+    doc: &Document,
+    stem: &str,
+    out_dir: &Path,
+    defs: &LabelMap,
+    title: Option<&str>,
+) -> Result<()> {
+    let body = render_markdown::render(doc, defs);
+    let page = match title {
+        Some(t) => format!("# {t}\n\n{body}"),
+        None => body,
+    };
+
+    let path: PathBuf = out_dir.join(format!("{stem}.md"));
     std::fs::create_dir_all(out_dir)?;
     std::fs::write(&path, page)?;
     Ok(())

@@ -12,6 +12,7 @@
 #   }
 
 latex_join: " & "
+markdown_join: " | "
 
 latex {
 $body \\ \hline
@@ -19,4 +20,8 @@ $body \\ \hline
 
 html {
 <tr>$body</tr>
+}
+
+markdown {
+| $body |
 }

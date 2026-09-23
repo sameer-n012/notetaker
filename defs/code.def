@@ -18,3 +18,9 @@ $body
 html {
 <pre><code$class_attr>$body</code></pre>
 }
+
+markdown {
+$fence${1?$1}
+$body
+$fence
+}

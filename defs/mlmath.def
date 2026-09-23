@@ -17,3 +17,9 @@ $body
 html {
 <div class="math-display">\[$body\]</div>
 }
+
+markdown {
+$$
+$body
+$$
+}

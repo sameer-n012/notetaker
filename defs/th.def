@@ -17,3 +17,7 @@ latex {
 html {
 <th>$body</th>
 }
+
+markdown {
+$body
+}

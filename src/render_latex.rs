@@ -39,10 +39,8 @@ fn render_node(
     match node {
         Node::Paragraph(inlines) => {
             if let [Inline::MathDisplay(m)] = inlines.as_slice() {
-                match defs.get("mlmath") {
-                    Some(def) => {
-                        out.push_str(&substitute(&def.latex_template, &[], m, None, None, &[]))
-                    }
+                match template(defs, "mlmath") {
+                    Some(tpl) => out.push_str(&substitute(tpl, &[], m, None, None, &[])),
                     None => out.push_str(&format!("\n\\[{m}\\]\n")),
                 }
                 out.push_str("\n\n");
@@ -55,14 +53,14 @@ fn render_node(
             // Fallback to plain code if the language given is not supported
             // by the listings package.
             let safe_lang = lang.as_deref().filter(|l| is_listings_language(l));
-            match defs.get("code") {
-                Some(def) => {
+            match template(defs, "code") {
+                Some(tpl) => {
                     let lang_opt = safe_lang
                         .map(|l| format!("[language={l}]"))
                         .unwrap_or_default();
                     let args: Vec<String> = lang.iter().cloned().collect();
                     out.push_str(&substitute(
-                        &def.latex_template,
+                        tpl,
                         &args,
                         source,
                         None,
@@ -109,10 +107,10 @@ fn render_node(
                 (None, body)
             };
 
-            match defs.get(label) {
-                Some(def) => {
+            match template(defs, label) {
+                Some(tpl) => {
                     out.push_str(&substitute(
-                        &def.latex_template,
+                        tpl,
                         args,
                         body.trim_end(),
                         id.as_deref(),
@@ -122,8 +120,8 @@ fn render_node(
                     out.push_str("\n\n");
                 }
                 None => {
-                    // No def file for this label, fall back to a LaTeX
-                    // environment with this name.
+                    // No def file (or no latex section) for this label, fall
+                    // back to a LaTeX environment with this name.
                     out.push_str(&format!("\\begin{{{label}}}\n"));
                     if let Some(id) = id {
                         out.push_str(&format!("\\label{{{id}}}\n"));
@@ -134,6 +132,14 @@ fn render_node(
             }
         }
     }
+}
+
+/*
+ * Gets the LaTeX template for `label`. None if the label has no def, or its
+ * def has no `latex { }` section; both cases use the same generic fallback.
+ */
+fn template<'a>(defs: &'a LabelMap, label: &str) -> Option<&'a str> {
+    defs.get(label).and_then(|d| d.latex_template.as_deref())
 }
 
 fn render_children(

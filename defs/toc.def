@@ -17,6 +17,12 @@ $body
 </details>
 }
 
+markdown {
+**Table of Contents**
+
+$body
+}
+
 style {
 .toc summary { cursor: pointer; font-weight: bold; margin-bottom: 0.5em; }
 .toc ul { list-style: none; padding-left: 1.2em; }
