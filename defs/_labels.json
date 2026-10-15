@@ -23,5 +23,6 @@
   "table": "table.def",
   "tr": "tr.def",
   "td": "td.def",
-  "th": "th.def"
+  "th": "th.def",
+  "text": "text.def"
 }
