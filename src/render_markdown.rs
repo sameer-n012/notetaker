@@ -4,8 +4,8 @@
  */
 
 use crate::ast::{Document, Inline, Node};
-use crate::defs::{substitute, LabelMap};
-use crate::numbering::{format_number, Counters, TocEntry};
+use crate::defs::{LabelMap, substitute};
+use crate::numbering::{Counters, TocEntry, format_number};
 use std::time::{SystemTime, UNIX_EPOCH};
 
 struct Ctx<'a> {

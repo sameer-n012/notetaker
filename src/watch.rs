@@ -1,5 +1,5 @@
-use anyhow::{bail, Context, Result};
-use notify_debouncer_mini::{new_debouncer, DebouncedEventKind};
+use anyhow::{Context, Result, bail};
+use notify_debouncer_mini::{DebouncedEventKind, new_debouncer};
 use std::path::{Path, PathBuf};
 use std::process::Command;
 use std::time::Duration;

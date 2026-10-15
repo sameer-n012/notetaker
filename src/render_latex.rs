@@ -4,8 +4,8 @@
  */
 
 use crate::ast::{Document, Inline, Node};
-use crate::defs::{substitute, LabelMap};
-use crate::numbering::{format_number, Counters};
+use crate::defs::{LabelMap, substitute};
+use crate::numbering::{Counters, format_number};
 
 pub fn render(doc: &Document, defs: &LabelMap) -> String {
     let counters = Counters::build(&doc.nodes, defs);

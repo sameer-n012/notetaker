@@ -6,7 +6,7 @@
 use crate::ast::{Document, Inline, Node};
 use crate::parser;
 use crate::watch::collect_note_files;
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use std::io::Read;
 use std::path::Path;
 

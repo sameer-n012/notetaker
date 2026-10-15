@@ -24,7 +24,7 @@
  * See `defs/` for examples of `.def` files and `_labels.json` for the mapping.
  */
 
-use anyhow::{bail, Context, Result};
+use anyhow::{Context, Result, bail};
 use std::collections::HashMap;
 use std::path::Path;
 

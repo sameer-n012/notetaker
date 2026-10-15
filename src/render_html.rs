@@ -4,8 +4,8 @@
  */
 
 use crate::ast::{Document, Inline, Node};
-use crate::defs::{substitute, LabelMap};
-use crate::numbering::{format_number, Counters, TocEntry};
+use crate::defs::{LabelMap, substitute};
+use crate::numbering::{Counters, TocEntry, format_number};
 
 pub fn render(doc: &Document, defs: &LabelMap) -> String {
     let counters = Counters::build(&doc.nodes, defs);
@@ -41,14 +41,7 @@ fn render_node(
             if let [Inline::MathDisplay(m)] = inlines.as_slice() {
                 match template(defs, "mlmath") {
                     Some(tpl) => {
-                        out.push_str(&substitute(
-                            tpl,
-                            &[],
-                            &escape(m),
-                            None,
-                            None,
-                            &[],
-                        ));
+                        out.push_str(&substitute(tpl, &[], &escape(m), None, None, &[]));
                         out.push('\n');
                     }
                     None => out.push_str(&format!(
@@ -95,14 +88,7 @@ fn render_node(
         } if label == "toc" => {
             if let Some(tpl) = template(defs, "toc") {
                 let toc_html = render_toc(&counters.toc);
-                out.push_str(&substitute(
-                    tpl,
-                    args,
-                    &toc_html,
-                    id.as_deref(),
-                    None,
-                    &[],
-                ));
+                out.push_str(&substitute(tpl, args, &toc_html, id.as_deref(), None, &[]));
                 out.push('\n');
             }
         }
