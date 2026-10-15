@@ -193,8 +193,6 @@ fn dedent(lines: &[&str]) -> String {
         .join("\n")
 }
 
-/// Parses `label(arg1, arg2, ...) #id` (args and id both optional) into its parts.
-
 /*
  * Parses a header string of the form `label(arg1, arg2, ...) #id` into its
  * constituent parts: the label, an optional vector of arguments, and an

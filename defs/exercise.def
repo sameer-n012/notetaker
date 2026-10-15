@@ -21,6 +21,11 @@ $body
 </div>
 }
 
+markdown {
+**Exercise $n${1? ($1)}.**${id?<a id="$id"></a>}
+$body
+}
+
 style {
 .exercise { margin: 1.2em 0; padding: 0.75em 1em; border: 1px dashed #b5533c; background: #fdf5f1; }
 .exercise-title { font-weight: bold; margin: 0 0 0.4em 0; }

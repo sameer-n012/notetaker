@@ -10,10 +10,18 @@
 #       }
 #   }
 
+# In Markdown the parent list adds the item marker (see ulist/olist), so li
+# only indents its later lines to keep nested content inside the item.
+markdown_indent: "   "
+
 latex {
 \item $body
 }
 
 html {
 <li>$body</li>
+}
+
+markdown {
+$body
 }

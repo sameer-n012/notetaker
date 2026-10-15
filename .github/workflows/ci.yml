@@ -14,11 +14,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      # Pinned to the version used for local development, so that clippy
+      # lints added in newer releases don't fail CI unexpectedly.
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@stable
+        uses: dtolnay/rust-toolchain@1.88.0
+        with:
+          components: rustfmt, clippy
 
       - name: Cache cargo registry and build artifacts
         uses: Swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --check
+
+      - name: Run clippy
+        run: cargo clippy --all-targets -- -D warnings
 
       - name: Run tests
         run: cargo test

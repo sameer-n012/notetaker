@@ -1,0 +1,25 @@
+# text: an unstyled block. Any argument is ignored, since the template has no
+# title. The optional #id lets you refer to it elsewhere with @text-note.
+#
+# Example:
+#   text #text-note {
+#       This also holds without the assumption, but the proof is longer.
+#   }
+
+numbered: false 
+
+latex {
+\par
+$body
+\par
+}
+
+html {
+<div class="text-block"$id_attr>
+$body
+</div>
+}
+
+style {
+.text-block{ } 
+}

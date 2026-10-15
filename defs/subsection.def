@@ -24,3 +24,9 @@ html {
 $body
 </div>
 }
+
+markdown {
+### $n. $1${id? <a id="$id"></a>}
+
+$body
+}

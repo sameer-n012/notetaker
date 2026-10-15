@@ -113,8 +113,11 @@ mod tests {
             toc,
             latex_join: None,
             html_join: None,
-            latex_template: String::new(),
-            html_template: String::new(),
+            markdown_join: None,
+            markdown_indent: None,
+            latex_template: None,
+            html_template: None,
+            markdown_template: None,
             style: None,
         }
     }

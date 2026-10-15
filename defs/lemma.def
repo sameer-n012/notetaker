@@ -21,6 +21,11 @@ $body
 </div>
 }
 
+markdown {
+**Lemma $n${1? ($1)}.**${id?<a id="$id"></a>}
+$body
+}
+
 style {
 .lemma { margin: 1.2em 0; padding: 0.75em 1em; border-left: 4px solid #4a7fd6; background: #f6f8fc; }
 .lemma-title { font-weight: bold; margin: 0 0 0.4em 0; }

@@ -18,6 +18,9 @@ pub enum Node {
     },
 }
 
+// `MathInline` ends with the enum name, but it pairs with `MathDisplay`; a
+// shorter name such as `Math` would hide which of the two math forms it is.
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug, Clone, PartialEq)]
 pub enum Inline {
     Text(String),
